@@ -2,25 +2,8 @@
 
 [⬅ Back to Index](README.md)
 
-## Contents
-
-**Part A — Regression**
-1. [Classification vs Regression](#1-classification-vs-regression)
-2. [Simple Linear Regression](#2-simple-linear-regression)
-3. [Multiple Linear Regression](#3-multiple-linear-regression)
-4. [Regression Evaluation Metrics](#4-regression-evaluation-metrics)
-5. [Linear vs Non-linear Regression](#5-linear-vs-non-linear-regression)
-6. [Loss Functions for Regression](#6-loss-functions-for-regression)
-7. [Non-parametric Regression](#7-non-parametric-regression)
-
-**Part B — Clustering**
-
-8. [Classification vs Clustering](#8-classification-vs-clustering)
-9. [Similarity and Distance Measures](#9-similarity-and-distance-measures)
-10. [Partition-based Clustering](#10-partition-based-clustering)
-11. [Hierarchical Clustering](#11-hierarchical-clustering)
-12. [Cluster Validation and Evaluation](#12-cluster-validation-and-evaluation)
-13. [Formula Sheet](#13-formula-sheet)
+**Part A – Regression:** linear regression → error metrics → linear vs non-linear → loss functions → non-parametric regression
+**Part B – Clustering:** distance measures → K-Means → hierarchical clustering → how to evaluate clusters
 
 ---
 
@@ -28,171 +11,122 @@
 
 ## 1. Classification vs Regression
 
-| Aspect | Classification | Regression |
-|---|---|---|
-| Output type | Discrete / categorical label | Continuous real value |
-| Question answered | "Which class?" | "How much? How many?" |
-| Example | Will it rain tomorrow? (Yes/No) | How many mm of rain tomorrow? |
-| Output of model | Class label or class probability | Real number |
-| Decision boundary | Separates classes | Best-fit line/curve through data |
-| Loss functions | Cross-entropy, hinge, 0–1 loss | MSE, MAE, Huber |
-| Evaluation metrics | Accuracy, precision, recall, F1, AUC | MSE, RMSE, MAE, $R^2$ |
-| Algorithms | Logistic regression, SVM, Naïve Bayes, KNN classifier | Linear regression, SVR, KNN regressor, regression trees |
+> 💡 **Classification** answers "**which category?**" · **Regression** answers "**how much?**"
 
-> **Note:** Logistic *regression* is a **classification** algorithm — it regresses the log-odds but outputs a class.
+| | Classification | Regression |
+|---|---|---|
+| Output | Category (Yes/No, Cat/Dog) | Number (price, temperature) |
+| Example | Will it rain? | How many mm of rain? |
+| Loss | Cross-entropy | MSE, MAE |
+| Metrics | Accuracy, F1 | MSE, RMSE, $R^2$ |
+| Algorithms | Logistic Regression, SVM, Naïve Bayes | Linear Regression, Regression Trees |
+
+> ⚠️ **Logistic Regression is a classification algorithm**, despite its name.
 
 ---
 
 ## 2. Simple Linear Regression
 
-### 2.1 Model
+> 💡 **In simple words:** Draw the **best straight line** through the data points.
 
 ```math
-y = \beta_0 + \beta_1 x + \varepsilon
+\hat{y} = \beta_0 + \beta_1 x
 ```
 
-- $\beta_0$ = intercept, $\beta_1$ = slope, $\varepsilon$ = random error (assumed $\mathcal{N}(0, \sigma^2)$).
-- Prediction: $\hat{y} = \beta_0 + \beta_1 x$. Residual: $e_i = y_i - \hat{y}_i$.
+- $\beta_1$ = slope (how much $y$ changes when $x$ increases by 1)
+- $\beta_0$ = intercept (value of $y$ when $x = 0$)
 
-### 2.2 Assumptions (LINE)
-
-1. **L**inearity — relationship between $x$ and $y$ is linear.
-2. **I**ndependence — errors are independent.
-3. **N**ormality — errors are normally distributed.
-4. **E**qual variance (homoscedasticity) — constant error variance.
-
-### 2.3 Ordinary Least Squares (OLS) — Derivation
-
-Minimise the sum of squared errors:
+**"Best" line = the one with the smallest total squared error** (Ordinary Least Squares):
 
 ```math
-J(\beta_0, \beta_1) = \sum_{i=1}^n\left(y_i - \beta_0 - \beta_1 x_i\right)^2
+\text{minimise } \sum_{i=1}^n (y_i - \hat{y}_i)^2
 ```
 
-Set partial derivatives to zero:
+**Solution:**
 
 ```math
-\frac{\partial J}{\partial\beta_0} = -2\sum_{i=1}^n(y_i - \beta_0 - \beta_1x_i) = 0 \quad\Rightarrow\quad \beta_0 = \bar{y} - \beta_1\bar{x}
+\beta_1 = \frac{\sum(x_i - \bar{x})(y_i - \bar{y})}{\sum(x_i - \bar{x})^2} \qquad \beta_0 = \bar{y} - \beta_1\bar{x}
 ```
 
-```math
-\frac{\partial J}{\partial\beta_1} = -2\sum_{i=1}^n x_i(y_i - \beta_0 - \beta_1x_i) = 0
-```
+($\bar{x}$, $\bar{y}$ = averages of $x$ and $y$.)
 
-Substituting $\beta_0$ and simplifying:
+<details>
+<summary>📘 Optional: Where do these formulas come from?</summary>
+
+Set the derivatives of $J = \sum(y_i - \beta_0 - \beta_1x_i)^2$ to zero:
 
 ```math
-\beta_1 = \frac{\sum_{i=1}^n(x_i - \bar{x})(y_i - \bar{y})}{\sum_{i=1}^n(x_i - \bar{x})^2} = \frac{S_{xy}}{S_{xx}} = \frac{n\sum x_iy_i - \sum x_i\sum y_i}{n\sum x_i^2 - \left(\sum x_i\right)^2}
+\frac{\partial J}{\partial\beta_0} = -2\sum(y_i - \beta_0 - \beta_1x_i) = 0 \Rightarrow \beta_0 = \bar{y} - \beta_1\bar{x}
 ```
 
 ```math
-\beta_0 = \bar{y} - \beta_1\bar{x}
+\frac{\partial J}{\partial\beta_1} = -2\sum x_i(y_i - \beta_0 - \beta_1x_i) = 0
 ```
 
-Also: $\beta_1 = r\,\dfrac{s_y}{s_x}$, where $r$ is the Pearson correlation coefficient:
+Substituting $\beta_0$ into the second equation and simplifying gives the formula for $\beta_1$.
 
-```math
-r = \frac{S_{xy}}{\sqrt{S_{xx}\,S_{yy}}}
-```
+</details>
 
-### 📝 Solved Numerical 2.1 — Fit a Regression Line
+### 📝 Example 2.1 — Fit a Line
 
 | $x$ | 1 | 2 | 3 | 4 | 5 |
 |---|---|---|---|---|---|
 | $y$ | 2 | 4 | 5 | 4 | 5 |
 
-**Step 1 — means:** $\bar{x} = 15/5 = 3$, $\bar{y} = 20/5 = 4$.
+**Step 1:** $\bar{x} = 3$, $\bar{y} = 4$
 
-**Step 2 — table:**
+**Step 2:**
 
-| $x_i$ | $y_i$ | $x_i-\bar{x}$ | $y_i-\bar{y}$ | $(x_i-\bar{x})(y_i-\bar{y})$ | $(x_i-\bar{x})^2$ | $(y_i-\bar{y})^2$ |
-|---|---|---|---|---|---|---|
-| 1 | 2 | −2 | −2 | 4 | 4 | 4 |
-| 2 | 4 | −1 | 0 | 0 | 1 | 0 |
-| 3 | 5 | 0 | 1 | 0 | 0 | 1 |
-| 4 | 4 | 1 | 0 | 0 | 1 | 0 |
-| 5 | 5 | 2 | 1 | 2 | 4 | 1 |
-| | | | **Sum** | $S_{xy} = 6$ | $S_{xx} = 10$ | $S_{yy} = 6$ |
+| $x$ | $y$ | $x - \bar{x}$ | $y - \bar{y}$ | product | $(x - \bar{x})^2$ |
+|---|---|---|---|---|---|
+| 1 | 2 | −2 | −2 | 4 | 4 |
+| 2 | 4 | −1 | 0 | 0 | 1 |
+| 3 | 5 | 0 | 1 | 0 | 0 |
+| 4 | 4 | 1 | 0 | 0 | 1 |
+| 5 | 5 | 2 | 1 | 2 | 4 |
+| | | | **Sum** | **6** | **10** |
 
-**Step 3 — coefficients:**
-
-```math
-\beta_1 = \frac{6}{10} = 0.6, \qquad \beta_0 = 4 - 0.6(3) = 2.2
-```
-
-**Regression line:** $\hat{y} = 2.2 + 0.6x$.
-
-**Step 4 — predict** $x = 6$: $\hat{y} = 2.2 + 3.6 = 5.8$.
-
-**Step 5 — correlation:**
+**Step 3:**
 
 ```math
-r = \frac{6}{\sqrt{10 \times 6}} = \frac{6}{7.746} = 0.775
+\beta_1 = \frac{6}{10} = 0.6 \qquad \beta_0 = 4 - 0.6 \times 3 = 2.2
 ```
 
-(Continued in Numerical 4.1 for error metrics.)
+**Line:** $\hat{y} = 2.2 + 0.6x$. For $x = 6$: $\hat{y} = 5.8$.
 
-### 2.4 Gradient Descent for Linear Regression
+### 2.1 Gradient Descent Version
 
-Cost (MSE): $J = \frac{1}{n}\sum(y_i - \hat{y}_i)^2$ with $\hat{y}_i = wx_i + b$.
+Instead of the formula, we can start from $w = 0, b = 0$ and take small steps downhill:
 
 ```math
-\frac{\partial J}{\partial w} = -\frac{2}{n}\sum_{i=1}^n x_i(y_i - \hat{y}_i), \qquad \frac{\partial J}{\partial b} = -\frac{2}{n}\sum_{i=1}^n(y_i - \hat{y}_i)
+w \leftarrow w - \eta\frac{\partial J}{\partial w}, \qquad \frac{\partial J}{\partial w} = -\frac{2}{n}\sum x_i(y_i - \hat{y}_i), \qquad \frac{\partial J}{\partial b} = -\frac{2}{n}\sum(y_i - \hat{y}_i)
 ```
+
+**One step** on the same data ($w = b = 0$, $\eta = 0.01$): $\sum x_iy_i = 66$, $\sum y_i = 20$
 
 ```math
-w \leftarrow w - \eta\frac{\partial J}{\partial w}, \qquad b \leftarrow b - \eta\frac{\partial J}{\partial b}
+\frac{\partial J}{\partial w} = -\frac{2}{5}(66) = -26.4 \Rightarrow w = 0.264 \qquad \frac{\partial J}{\partial b} = -\frac{2}{5}(20) = -8 \Rightarrow b = 0.08
 ```
 
-### 📝 Solved Numerical 2.2 — One Gradient Descent Step
-
-Same data, start $w = 0$, $b = 0$, $\eta = 0.01$. All predictions are 0, so residuals $= y = (2, 4, 5, 4, 5)$.
-
-```math
-\sum x_i y_i = 2 + 8 + 15 + 16 + 25 = 66, \qquad \sum y_i = 20
-```
-
-```math
-\frac{\partial J}{\partial w} = -\frac{2}{5}(66) = -26.4, \qquad \frac{\partial J}{\partial b} = -\frac{2}{5}(20) = -8
-```
-
-```math
-w = 0 - 0.01(-26.4) = 0.264, \qquad b = 0 - 0.01(-8) = 0.08
-```
-
-Repeating many steps converges to $w = 0.6$, $b = 2.2$.
+Many steps later it reaches $w = 0.6$, $b = 2.2$.
 
 ---
 
 ## 3. Multiple Linear Regression
 
-### 3.1 Model
+More than one input:
 
 ```math
-y = \beta_0 + \beta_1x_1 + \beta_2x_2 + \dots + \beta_dx_d + \varepsilon
+\hat{y} = \beta_0 + \beta_1x_1 + \beta_2x_2 + \dots + \beta_dx_d
 ```
 
-In matrix form with design matrix $X$ ($n \times (d+1)$, first column all 1's):
-
-```math
-\mathbf{y} = X\boldsymbol{\beta} + \boldsymbol{\varepsilon}
-```
-
-### 3.2 Normal Equation
-
-Minimise $J(\boldsymbol{\beta}) = (\mathbf{y} - X\boldsymbol{\beta})^T(\mathbf{y} - X\boldsymbol{\beta})$:
-
-```math
-\nabla_{\boldsymbol{\beta}}J = -2X^T\mathbf{y} + 2X^TX\boldsymbol{\beta} = 0
-```
+**Normal equation** (matrix form; $X$ has a first column of 1's):
 
 ```math
 \boldsymbol{\beta} = (X^TX)^{-1}X^T\mathbf{y}
 ```
 
-**Complexity:** $O(d^3)$ for the inverse — slow for very many features; then use gradient descent. If $X^TX$ is singular (multicollinearity), use the pseudo-inverse or ridge regression.
-
-### 📝 Solved Numerical 3.1 — Normal Equation
+### 📝 Example 3.1
 
 | $x_1$ | $x_2$ | $y$ |
 |---|---|---|
@@ -202,299 +136,159 @@ Minimise $J(\boldsymbol{\beta}) = (\mathbf{y} - X\boldsymbol{\beta})^T(\mathbf{y
 | 3 | 2 | 11 |
 
 ```math
-X = \begin{bmatrix}1&1&1\\1&2&1\\1&2&2\\1&3&2\end{bmatrix}, \qquad \mathbf{y} = \begin{bmatrix}6\\8\\9\\11\end{bmatrix}
+X^TX = \begin{bmatrix}4&8&6\\8&18&13\\6&13&10\end{bmatrix}, \quad X^T\mathbf{y} = \begin{bmatrix}34\\73\\54\end{bmatrix}, \quad (X^TX)^{-1} = \begin{bmatrix}2.75&-0.5&-1\\-0.5&1&-1\\-1&-1&2\end{bmatrix}
 ```
 
 ```math
-X^TX = \begin{bmatrix}4&8&6\\8&18&13\\6&13&10\end{bmatrix}, \qquad X^T\mathbf{y} = \begin{bmatrix}34\\73\\54\end{bmatrix}
+\boldsymbol{\beta} = (X^TX)^{-1}X^T\mathbf{y} = \begin{bmatrix}3\\2\\1\end{bmatrix} \Rightarrow \hat{y} = 3 + 2x_1 + x_2
 ```
-
-```math
-(X^TX)^{-1} = \begin{bmatrix}2.75&-0.5&-1\\-0.5&1&-1\\-1&-1&2\end{bmatrix}
-```
-
-```math
-\boldsymbol{\beta} = \begin{bmatrix}2.75(34) - 0.5(73) - 1(54)\\ -0.5(34) + 1(73) - 1(54)\\ -1(34) - 1(73) + 2(54)\end{bmatrix} = \begin{bmatrix}93.5 - 36.5 - 54\\ -17 + 73 - 54\\ -34 - 73 + 108\end{bmatrix} = \begin{bmatrix}3\\2\\1\end{bmatrix}
-```
-
-**Model:** $\hat{y} = 3 + 2x_1 + x_2$ (fits all 4 points exactly).
 
 ---
 
-## 4. Regression Evaluation Metrics
+## 4. Measuring Regression Error
 
 ```math
-\text{MSE} = \frac{1}{n}\sum_{i=1}^n(y_i - \hat{y}_i)^2 \qquad \text{RMSE} = \sqrt{\text{MSE}} \qquad \text{MAE} = \frac{1}{n}\sum_{i=1}^n|y_i - \hat{y}_i|
+\text{MSE} = \frac{1}{n}\sum(y_i - \hat{y}_i)^2 \qquad \text{RMSE} = \sqrt{\text{MSE}} \qquad \text{MAE} = \frac{1}{n}\sum|y_i - \hat{y}_i|
 ```
+
+**$R^2$ — how much of the variation the model explains** (1 = perfect, 0 = no better than the average):
 
 ```math
-\text{MAPE} = \frac{100\%}{n}\sum_{i=1}^n\left|\frac{y_i - \hat{y}_i}{y_i}\right|
+R^2 = 1 - \frac{SSE}{SST} \qquad SSE = \sum(y_i - \hat{y}_i)^2 \qquad SST = \sum(y_i - \bar{y})^2
 ```
 
-**Sums of squares:**
-
-```math
-SST = \sum(y_i - \bar{y})^2, \qquad SSR = \sum(\hat{y}_i - \bar{y})^2, \qquad SSE = \sum(y_i - \hat{y}_i)^2, \qquad SST = SSR + SSE
-```
-
-**Coefficient of determination:**
-
-```math
-R^2 = 1 - \frac{SSE}{SST} = \frac{SSR}{SST}
-```
-
-$R^2$ = fraction of variance in $y$ explained by the model (0 to 1 on training data for OLS). For simple linear regression, $R^2 = r^2$.
-
-**Adjusted $R^2$** (penalises adding useless features; $p$ = number of predictors):
+**Adjusted $R^2$** (penalises adding useless features; $p$ = number of features):
 
 ```math
 R^2_{adj} = 1 - \frac{(1 - R^2)(n - 1)}{n - p - 1}
 ```
 
-### 📝 Solved Numerical 4.1 — Metrics for the Fitted Line
+### 📝 Example 4.1 — Errors for $\hat{y} = 2.2 + 0.6x$
 
-Using $\hat{y} = 2.2 + 0.6x$:
-
-| $x$ | $y$ | $\hat{y}$ | $e = y - \hat{y}$ | $e^2$ | $\lvert e\rvert$ |
-|---|---|---|---|---|---|
-| 1 | 2 | 2.8 | −0.8 | 0.64 | 0.8 |
-| 2 | 4 | 3.4 | 0.6 | 0.36 | 0.6 |
-| 3 | 5 | 4.0 | 1.0 | 1.00 | 1.0 |
-| 4 | 4 | 4.6 | −0.6 | 0.36 | 0.6 |
-| 5 | 5 | 5.2 | −0.2 | 0.04 | 0.2 |
-| | | | **Sum** | **2.40** | **3.2** |
+| $x$ | $y$ | $\hat{y}$ | error | error² |
+|---|---|---|---|---|
+| 1 | 2 | 2.8 | −0.8 | 0.64 |
+| 2 | 4 | 3.4 | 0.6 | 0.36 |
+| 3 | 5 | 4.0 | 1.0 | 1.00 |
+| 4 | 4 | 4.6 | −0.6 | 0.36 |
+| 5 | 5 | 5.2 | −0.2 | 0.04 |
+| | | | **Sum** | **2.40** |
 
 ```math
-SSE = 2.4, \quad \text{MSE} = \frac{2.4}{5} = 0.48, \quad \text{RMSE} = \sqrt{0.48} = 0.693, \quad \text{MAE} = \frac{3.2}{5} = 0.64
+\text{MSE} = \frac{2.4}{5} = 0.48 \quad \text{RMSE} = 0.69 \quad \text{MAE} = \frac{0.8 + 0.6 + 1 + 0.6 + 0.2}{5} = 0.64
 ```
 
 ```math
-R^2 = 1 - \frac{2.4}{6} = 0.6 \qquad (\text{check: } r^2 = 0.775^2 = 0.6\ ✓)
+SST = 4 + 0 + 1 + 0 + 1 = 6 \qquad R^2 = 1 - \frac{2.4}{6} = 0.6 \qquad R^2_{adj} = 1 - \frac{0.4 \times 4}{3} = 0.47
 ```
 
-```math
-R^2_{adj} = 1 - \frac{(1 - 0.6)(5 - 1)}{5 - 1 - 1} = 1 - \frac{1.6}{3} = 0.467
-```
+The line explains 60% of the variation in $y$.
 
 ---
 
 ## 5. Linear vs Non-linear Regression
 
-### 5.1 What does "linear" mean?
+> 💡 "Linear" means **linear in the parameters** ($\beta$'s), not necessarily a straight line in $x$.
 
-A model is **linear** if it is linear in its **parameters** $\boldsymbol{\beta}$ — not necessarily in $x$.
+| Model | Type |
+|---|---|
+| $y = \beta_0 + \beta_1x$ | Linear |
+| $y = \beta_0 + \beta_1x + \beta_2x^2$ | Still **linear** (polynomial regression) |
+| $y = ae^{bx}$ | Non-linear |
 
-| Model | Linear in parameters? | Type |
+| | Linear | Non-linear |
 |---|---|---|
-| $y = \beta_0 + \beta_1x$ | Yes | Linear |
-| $y = \beta_0 + \beta_1x + \beta_2x^2$ | Yes | Linear (polynomial) |
-| $y = \beta_0 + \beta_1\ln x$ | Yes | Linear |
-| $y = \beta_0 e^{\beta_1 x}$ | No | Non-linear (but linearisable) |
-| $y = \frac{\beta_0}{1 + e^{-\beta_1(x-\beta_2)}}$ | No | Non-linear (logistic growth) |
+| Shape | Straight line / plane | Curve |
+| Solving | Direct formula | Iterative methods |
+| Risk | Underfitting curved data | Overfitting |
+| Example | Salary vs experience | Population growth |
 
-### 5.2 Comparison
-
-| Aspect | Linear Regression | Non-linear Regression |
-|---|---|---|
-| Relationship | Straight line / hyperplane | Curve |
-| Solution | Closed form (normal equation) | Iterative (Gauss–Newton, Levenberg–Marquardt, GD) |
-| Interpretability | High | Lower |
-| Risk | Underfitting complex data | Overfitting, local minima, needs good initial guesses |
-| Examples | Salary vs experience | Population growth, drug dose–response |
-
-### 5.3 Polynomial Regression
+**Trick:** some non-linear models become linear after taking logs:
 
 ```math
-\hat{y} = \beta_0 + \beta_1x + \beta_2x^2 + \dots + \beta_px^p
+y = ae^{bx} \quad\xrightarrow{\ \ln\ }\quad \ln y = \ln a + bx
 ```
 
-Create features $(x, x^2, \dots, x^p)$ and apply ordinary linear regression. High degree $p$ → overfitting (wiggly curve).
-
-### 5.4 Linearisation by Transformation
-
-**Exponential model** $y = ae^{bx}$ → take natural log:
-
-```math
-\ln y = \ln a + bx \quad\Rightarrow\quad Y = A + bx \quad (Y = \ln y,\ A = \ln a)
-```
-
-**Power model** $y = ax^b$ → $\ln y = \ln a + b\ln x$.
-
-### 📝 Solved Numerical 5.1 — Exponential Fit via Log Transform
+### 📝 Example 5.1 — Exponential Fit
 
 | $x$ | 0 | 1 | 2 |
 |---|---|---|---|
 | $y$ | 2 | 5.4 | 14.8 |
-| $Y = \ln y$ | 0.693 | 1.686 | 2.695 |
+| $\ln y$ | 0.693 | 1.686 | 2.695 |
 
-$\bar{x} = 1$, $\bar{Y} = (0.693 + 1.686 + 2.695)/3 = 1.691$.
+Fit a line to $(x, \ln y)$: slope $b = \frac{(-1)(-0.998) + (1)(1.004)}{2} = 1.0$, intercept $= 1.691 - 1.0 = 0.69$, so $a = e^{0.69} = 2$.
 
-```math
-b = \frac{(-1)(0.693 - 1.691) + 0 + (1)(2.695 - 1.691)}{1 + 0 + 1} = \frac{0.998 + 1.004}{2} = 1.001
-```
-
-```math
-A = 1.691 - 1.001(1) = 0.690, \qquad a = e^{0.690} = 1.99
-```
-
-**Model:** $y \approx 2e^{x}$.
+**Model:** $y = 2e^{x}$.
 
 ---
 
 ## 6. Loss Functions for Regression
 
-Let residual $r = y - \hat{y}$.
+Let error $r = y - \hat{y}$.
 
-### 6.1 Mean Squared Error (L2 loss)
-
-```math
-L_{MSE} = \frac{1}{n}\sum_{i=1}^n(y_i - \hat{y}_i)^2, \qquad \frac{\partial}{\partial\hat{y}}(y - \hat{y})^2 = -2(y - \hat{y})
-```
-
-- Smooth and differentiable everywhere; convex.
-- Penalises large errors heavily → **sensitive to outliers**.
-- Minimiser of $\sum(y_i - c)^2$ is the **mean**.
-
-### 6.2 Mean Absolute Error (L1 loss)
-
-```math
-L_{MAE} = \frac{1}{n}\sum_{i=1}^n|y_i - \hat{y}_i|, \qquad \frac{\partial}{\partial\hat{y}}|y - \hat{y}| = -\text{sign}(y - \hat{y})
-```
-
-- **Robust to outliers**; not differentiable at 0.
-- Minimiser of $\sum|y_i - c|$ is the **median**.
-
-### 6.3 Huber Loss (best of both)
-
-```math
-L_\delta(r) = \begin{cases}\frac{1}{2}r^2 & \text{if } |r| \leq \delta\\ \delta\left(|r| - \frac{1}{2}\delta\right) & \text{if } |r| > \delta\end{cases}
-```
-
-Quadratic for small errors, linear for large errors. $\delta$ is a hyperparameter.
-
-### 6.4 Log-Cosh Loss
-
-```math
-L = \sum_{i=1}^n\ln\left(\cosh(\hat{y}_i - y_i)\right)
-```
-
-≈ $r^2/2$ for small $r$, ≈ $|r| - \ln 2$ for large $r$; twice differentiable.
-
-### 6.5 Quantile (Pinball) Loss
-
-For quantile $\tau\in(0,1)$:
-
-```math
-L_\tau(r) = \begin{cases}\tau\,r & \text{if } r \geq 0\\ (\tau - 1)\,r & \text{if } r < 0\end{cases}
-```
-
-Used to predict intervals ($\tau = 0.5$ gives MAE/2 → median regression).
-
-### 6.6 Comparison
-
-| Loss | Outlier robustness | Differentiable | Optimal constant |
-|---|---|---|---|
-| MSE | Poor | Yes | Mean |
-| MAE | Good | Not at 0 | Median |
-| Huber | Good | Yes (once) | Between mean & median |
-| Log-cosh | Good | Yes (twice) | — |
-| Quantile | Good | Not at 0 | $\tau$-th quantile |
-
-### 📝 Solved Numerical 6.1 — Compare Losses with an Outlier
-
-Residuals: $r = (1, -2, 0.5, 6)$ (the 6 is an outlier).
-
-**MSE:**
-
-```math
-\frac{1 + 4 + 0.25 + 36}{4} = \frac{41.25}{4} = 10.3125, \qquad \text{RMSE} = 3.211
-```
-
-**MAE:**
-
-```math
-\frac{1 + 2 + 0.5 + 6}{4} = \frac{9.5}{4} = 2.375
-```
-
-**Huber ($\delta = 1.5$):**
-
-| $r$ | $\lvert r\rvert \leq 1.5$? | Loss |
+| Loss | Formula | Behaviour |
 |---|---|---|
-| 1 | Yes | $0.5(1)^2 = 0.5$ |
-| −2 | No | $1.5(2 - 0.75) = 1.875$ |
-| 0.5 | Yes | $0.5(0.25) = 0.125$ |
-| 6 | No | $1.5(6 - 0.75) = 7.875$ |
+| **MSE** | $\frac{1}{n}\sum r^2$ | Punishes big errors heavily → **sensitive to outliers** |
+| **MAE** | $\frac{1}{n}\sum\lvert r\rvert$ | Treats all errors equally → **robust to outliers** |
+| **Huber** | see below | Mix of both |
+| **Log-cosh** | $\sum\ln(\cosh r)$ | Smooth version similar to Huber |
+
+**Huber loss** — squared for small errors, linear for large ones:
 
 ```math
-\text{Huber} = \frac{0.5 + 1.875 + 0.125 + 7.875}{4} = \frac{10.375}{4} = 2.594
+L_\delta(r) = \begin{cases}\frac{1}{2}r^2 & \text{if } |r| \leq \delta\\[1mm] \delta\left(|r| - \frac{\delta}{2}\right) & \text{if } |r| > \delta\end{cases}
 ```
 
-**Quantile ($\tau = 0.9$):** $0.9(1) = 0.9$; $(-0.1)(-2) = 0.2$; $0.9(0.5) = 0.45$; $0.9(6) = 5.4$ → mean $= 6.95/4 = 1.7375$.
+### 📝 Example 6.1 — Effect of an Outlier
 
-The outlier contributes 36/41.25 = **87% of the MSE** but only 6/9.5 = 63% of the MAE — MSE is dominated by outliers.
+Errors: $1, -2, 0.5, 6$ (6 is an outlier).
+
+```math
+\text{MSE} = \frac{1 + 4 + 0.25 + 36}{4} = 10.31 \qquad \text{MAE} = \frac{1 + 2 + 0.5 + 6}{4} = 2.375
+```
+
+**Huber ($\delta = 1.5$):** $0.5(1)^2 = 0.5$; $1.5(2 - 0.75) = 1.875$; $0.5(0.5)^2 = 0.125$; $1.5(6 - 0.75) = 7.875$
+
+```math
+\text{Huber} = \frac{0.5 + 1.875 + 0.125 + 7.875}{4} = 2.59
+```
+
+The outlier makes up 87% of the MSE — MSE is heavily affected by outliers.
 
 ---
 
 ## 7. Non-parametric Regression
 
-No fixed functional form; the model complexity grows with the data.
+> 💡 No fixed equation — the prediction is built directly from nearby data points.
 
-### 7.1 KNN Regression
+**KNN Regression:** average of the $k$ nearest $y$ values (see Unit III).
 
-```math
-\hat{y}(x_0) = \frac{1}{k}\sum_{i\in N_k(x_0)}y_i
-```
-
-(See Unit III, Numerical 2.2.)
-
-### 7.2 Kernel Regression (Nadaraya–Watson Estimator)
-
-Weighted average of all training targets, weights from a kernel that decreases with distance:
+**Kernel Regression (Nadaraya–Watson):** weighted average of **all** points; closer points get bigger weights.
 
 ```math
-\hat{y}(x_0) = \frac{\sum_{i=1}^n K\left(\frac{x_0 - x_i}{h}\right)y_i}{\sum_{i=1}^n K\left(\frac{x_0 - x_i}{h}\right)}
+\hat{y}(x_0) = \frac{\sum_i K_i\,y_i}{\sum_i K_i} \qquad K_i = \exp\left(-\frac{(x_0 - x_i)^2}{2h^2}\right)
 ```
 
-**Gaussian kernel:**
+($h$ = bandwidth: small → wiggly; large → too smooth.)
 
-```math
-K(u) = \exp\left(-\frac{u^2}{2}\right) \quad\Rightarrow\quad K\left(\frac{x_0 - x_i}{h}\right) = \exp\left(-\frac{(x_0 - x_i)^2}{2h^2}\right)
-```
+**Regression trees** (Unit III) and **LOESS** (local line fitting) are also non-parametric.
 
-**Epanechnikov kernel:** $K(u) = \frac{3}{4}(1 - u^2)$ for $|u| \leq 1$, else 0.
+### 📝 Example 7.1 — Kernel Regression
 
-**Bandwidth $h$:** small $h$ → wiggly (high variance); large $h$ → overly smooth (high bias).
+Data $x = (1..5)$, $y = (2, 4, 5, 4, 5)$. Predict at $x_0 = 2.5$, $h = 1$.
 
-### 📝 Solved Numerical 7.1 — Nadaraya–Watson
-
-Data $x = (1,2,3,4,5)$, $y = (2,4,5,4,5)$. Predict at $x_0 = 2.5$ with Gaussian kernel, $h = 1$.
-
-| $x_i$ | $(x_0 - x_i)^2$ | $K_i = e^{-(x_0-x_i)^2/2}$ | $K_iy_i$ |
+| $x_i$ | $(2.5 - x_i)^2$ | $K_i$ | $K_iy_i$ |
 |---|---|---|---|
-| 1 | 2.25 | 0.3247 | 0.6494 |
-| 2 | 0.25 | 0.8825 | 3.5300 |
-| 3 | 0.25 | 0.8825 | 4.4125 |
-| 4 | 2.25 | 0.3247 | 1.2988 |
-| 5 | 6.25 | 0.0439 | 0.2195 |
-| **Sum** | | **2.4583** | **10.1102** |
+| 1 | 2.25 | 0.325 | 0.649 |
+| 2 | 0.25 | 0.883 | 3.530 |
+| 3 | 0.25 | 0.883 | 4.413 |
+| 4 | 2.25 | 0.325 | 1.299 |
+| 5 | 6.25 | 0.044 | 0.220 |
+| **Sum** | | **2.458** | **10.110** |
 
 ```math
-\hat{y}(2.5) = \frac{10.1102}{2.4583} = 4.113
+\hat{y}(2.5) = \frac{10.110}{2.458} = 4.11
 ```
-
-(Linear regression would predict $2.2 + 0.6(2.5) = 3.7$.)
-
-### 7.3 Other Non-parametric Methods
-
-- **Regression Trees (CART):** piecewise-constant predictions (Unit III, §7).
-- **LOESS / LOWESS (Locally Weighted Regression):** at each query point, fit a weighted linear regression using nearby points:
-
-```math
-\min_{\beta_0,\beta_1}\sum_{i=1}^n K\left(\frac{x_0 - x_i}{h}\right)\left(y_i - \beta_0 - \beta_1x_i\right)^2
-```
-
-- **Splines:** piecewise polynomials joined smoothly at knots.
-- **Support Vector Regression (with RBF kernel), Gaussian Process Regression.**
 
 ---
 
@@ -502,312 +296,153 @@ Data $x = (1,2,3,4,5)$, $y = (2,4,5,4,5)$. Predict at $x_0 = 2.5$ with Gaussian 
 
 ## 8. Classification vs Clustering
 
-| Aspect | Classification | Clustering |
-|---|---|---|
-| Learning type | Supervised | Unsupervised |
-| Labels | Known, predefined classes | No labels; groups discovered |
-| Goal | Predict class of new data | Group similar data together |
-| Number of groups | Fixed by the data | Often chosen by user ($k$) or discovered |
-| Evaluation | Accuracy, F1 against true labels | Internal indices (silhouette, SSE); external if labels exist |
-| Examples | Spam filter, disease diagnosis | Customer segmentation, document grouping, image segmentation |
-| Algorithms | Decision tree, SVM, Naïve Bayes | K-Means, Hierarchical, DBSCAN |
+> 💡 **Classification** = sorting into **known** groups (labels given). **Clustering** = **discovering** groups (no labels).
 
-**Goal of clustering:** high **intra-cluster similarity** (compact clusters) and low **inter-cluster similarity** (well-separated clusters).
+| | Classification | Clustering |
+|---|---|---|
+| Learning | Supervised | Unsupervised |
+| Labels | Given | Not given |
+| Goal | Predict label of new data | Group similar data |
+| Example | Spam filter | Customer segmentation |
+| Algorithms | Decision tree, SVM | K-Means, Hierarchical |
+
+**Good clustering:** points in the same cluster are **close**, and different clusters are **far apart**.
 
 ---
 
 ## 9. Similarity and Distance Measures
 
-### 9.1 Properties of a Distance Metric
+| Measure | Formula | Used for |
+|---|---|---|
+| Euclidean | $\sqrt{\sum(x_j - y_j)^2}$ | General numeric data |
+| Manhattan | $\sum\lvert x_j - y_j\rvert$ | Grid-like data |
+| Minkowski | $\left(\sum\lvert x_j - y_j\rvert^p\right)^{1/p}$ | General form |
+| Chebyshev | $\max_j\lvert x_j - y_j\rvert$ | Largest single difference |
+| Cosine similarity | $\frac{\mathbf{x}\cdot\mathbf{y}}{\lVert\mathbf{x}\rVert\lVert\mathbf{y}\rVert}$ | Text / documents |
+| Jaccard | $\frac{\lvert A\cap B\rvert}{\lvert A\cup B\rvert}$ | Sets, binary data |
+| Hamming | No. of positions that differ | Strings, binary vectors |
 
-1. **Non-negativity:** $d(x, y) \geq 0$
-2. **Identity:** $d(x, y) = 0 \iff x = y$
-3. **Symmetry:** $d(x, y) = d(y, x)$
-4. **Triangle inequality:** $d(x, z) \leq d(x, y) + d(y, z)$
-
-### 9.2 Numeric Data
-
-```math
-\text{Euclidean: } d(\mathbf{x},\mathbf{y}) = \sqrt{\sum_{j=1}^d(x_j - y_j)^2}
-```
-
-```math
-\text{Manhattan: } d(\mathbf{x},\mathbf{y}) = \sum_{j=1}^d|x_j - y_j|
-```
-
-```math
-\text{Minkowski: } d(\mathbf{x},\mathbf{y}) = \left(\sum_{j=1}^d|x_j - y_j|^p\right)^{1/p}
-```
-
-```math
-\text{Chebyshev: } d(\mathbf{x},\mathbf{y}) = \max_j|x_j - y_j|
-```
-
-**Mahalanobis** (accounts for correlation and scale; $\Sigma$ = covariance matrix):
-
-```math
-d_M(\mathbf{x},\mathbf{y}) = \sqrt{(\mathbf{x}-\mathbf{y})^T\Sigma^{-1}(\mathbf{x}-\mathbf{y})}
-```
-
-### 9.3 Similarity Measures
-
-**Cosine similarity** (text/documents — ignores magnitude):
-
-```math
-\cos\theta = \frac{\mathbf{x}\cdot\mathbf{y}}{\lVert\mathbf{x}\rVert\,\lVert\mathbf{y}\rVert} = \frac{\sum_j x_jy_j}{\sqrt{\sum_j x_j^2}\sqrt{\sum_j y_j^2}}, \qquad d_{\cos} = 1 - \cos\theta
-```
-
-**Pearson correlation:**
-
-```math
-\rho(\mathbf{x},\mathbf{y}) = \frac{\sum_j(x_j - \bar{x})(y_j - \bar{y})}{\sqrt{\sum_j(x_j - \bar{x})^2}\sqrt{\sum_j(y_j - \bar{y})^2}}
-```
-
-### 9.4 Binary / Set Data
-
-For two binary vectors, let $M_{11}$ = both 1, $M_{00}$ = both 0, $M_{10}$, $M_{01}$ = mismatches.
-
-```math
-\text{Simple Matching Coefficient: } SMC = \frac{M_{11} + M_{00}}{M_{11} + M_{00} + M_{10} + M_{01}}
-```
-
-```math
-\text{Jaccard: } J(A, B) = \frac{|A\cap B|}{|A\cup B|} = \frac{M_{11}}{M_{11} + M_{10} + M_{01}}, \qquad d_J = 1 - J
-```
-
-**Hamming distance:** number of positions in which two strings/vectors differ.
-
-### 📝 Solved Numerical 9.1 — All Distances
+### 📝 Example 9.1 — All Distances
 
 $\mathbf{A} = (1, 2, 3)$, $\mathbf{B} = (4, 6, 8)$. Differences: $(3, 4, 5)$.
 
 ```math
-\text{Euclidean} = \sqrt{9 + 16 + 25} = \sqrt{50} = 7.071
+\text{Euclidean} = \sqrt{9 + 16 + 25} = 7.07 \qquad \text{Manhattan} = 3 + 4 + 5 = 12 \qquad \text{Chebyshev} = 5
 ```
 
 ```math
-\text{Manhattan} = 3 + 4 + 5 = 12
+\text{Minkowski } (p = 3) = (27 + 64 + 125)^{1/3} = 216^{1/3} = 6
 ```
 
 ```math
-\text{Minkowski } (p=3) = (27 + 64 + 125)^{1/3} = 216^{1/3} = 6
+\cos\theta = \frac{1 \times 4 + 2 \times 6 + 3 \times 8}{\sqrt{14}\sqrt{116}} = \frac{40}{40.3} = 0.99 \quad \text{(almost the same direction)}
 ```
+
+### 📝 Example 9.2 — Jaccard and Hamming
+
+$\mathbf{p} = 1011001$, $\mathbf{q} = 1001011$. Both-1 positions: 3; mismatches: 2.
 
 ```math
-\text{Chebyshev} = \max(3, 4, 5) = 5
+\text{Jaccard} = \frac{3}{3 + 2} = 0.6 \qquad \text{Hamming} = 2
 ```
-
-Notice: Manhattan (12) ≥ Euclidean (7.07) ≥ Minkowski p=3 (6) ≥ Chebyshev (5).
-
-```math
-\cos\theta = \frac{1(4) + 2(6) + 3(8)}{\sqrt{14}\sqrt{116}} = \frac{40}{3.742 \times 10.770} = \frac{40}{40.30} = 0.9926
-```
-
-Cosine distance $= 0.0074$ → almost the same direction.
-
-### 📝 Solved Numerical 9.2 — Jaccard, SMC, Hamming
-
-$\mathbf{p} = (1, 0, 1, 1, 0, 0, 1)$, $\mathbf{q} = (1, 0, 0, 1, 0, 1, 1)$.
-
-Position-wise: $M_{11} = 3$ (positions 1, 4, 7), $M_{00} = 2$ (positions 2, 5), $M_{10} = 1$ (position 3), $M_{01} = 1$ (position 6).
-
-```math
-SMC = \frac{3 + 2}{7} = 0.714, \qquad J = \frac{3}{3 + 1 + 1} = 0.6, \qquad \text{Hamming} = 1 + 1 = 2
-```
-
-### 📝 Solved Numerical 9.3 — Mahalanobis vs Euclidean
-
-$\Sigma = \begin{bmatrix}4 & 0\\0 & 1\end{bmatrix}$, point $\mathbf{x} = (2, 1)$, mean $\boldsymbol{\mu} = (0, 0)$.
-
-```math
-d_M = \sqrt{\begin{bmatrix}2 & 1\end{bmatrix}\begin{bmatrix}1/4 & 0\\0 & 1\end{bmatrix}\begin{bmatrix}2\\1\end{bmatrix}} = \sqrt{\frac{4}{4} + 1} = \sqrt{2} = 1.414
-```
-
-Euclidean $= \sqrt{5} = 2.236$. Feature 1 has larger variance, so its deviation counts less in Mahalanobis distance.
 
 ---
 
-## 10. Partition-based Clustering
+## 10. Partition-based Clustering: K-Means
 
-Divide $n$ objects into $k$ non-overlapping clusters, optimising an objective.
+> 💡 **In simple words:** Pick $k$ centre points. Assign every point to its nearest centre. Move each centre to the middle of its points. Repeat until nothing changes.
 
-### 10.1 K-Means Algorithm
-
-**Objective — Within-Cluster Sum of Squares (WCSS / SSE / inertia):**
-
-```math
-J = \sum_{j=1}^{k}\sum_{\mathbf{x}_i\in C_j}\lVert\mathbf{x}_i - \boldsymbol{\mu}_j\rVert^2
-```
-
-**Algorithm (Lloyd's):**
-1. Choose $k$; initialise $k$ centroids (randomly or with K-Means++).
-2. **Assignment step:** assign each point to the nearest centroid:
+### 10.1 Algorithm
+1. Choose $k$ and pick $k$ starting centroids.
+2. **Assign** each point to the nearest centroid.
+3. **Update** each centroid = mean of its points:
 
 ```math
-C_j = \lbrace\mathbf{x}_i : \lVert\mathbf{x}_i - \boldsymbol{\mu}_j\rVert \leq \lVert\mathbf{x}_i - \boldsymbol{\mu}_l\rVert\ \ \forall l\rbrace
+\boldsymbol{\mu}_j = \frac{1}{|C_j|}\sum_{\mathbf{x}\in C_j}\mathbf{x}
 ```
 
-3. **Update step:** recompute each centroid as the mean of its points:
+4. Repeat steps 2–3 until the clusters stop changing.
+
+**What K-Means minimises** — Within-Cluster Sum of Squares (WCSS):
 
 ```math
-\boldsymbol{\mu}_j = \frac{1}{|C_j|}\sum_{\mathbf{x}_i\in C_j}\mathbf{x}_i
+J = \sum_{j=1}^{k}\sum_{\mathbf{x}\in C_j}\lVert\mathbf{x} - \boldsymbol{\mu}_j\rVert^2
 ```
 
-4. Repeat 2–3 until assignments no longer change (convergence).
+**Choosing $k$ — Elbow method:** plot WCSS vs $k$ and pick the "elbow" where the curve stops dropping sharply.
 
-**Properties:**
-- Each step never increases $J$ → guaranteed to converge (to a **local** minimum).
-- Time complexity: $O(nkdI)$ ($I$ = iterations).
-- Assumes spherical, similar-size clusters; sensitive to initialisation, outliers, and scale; needs $k$ in advance.
+| Pros | Cons |
+|---|---|
+| Simple, fast | Must choose $k$ in advance |
+| Works well for round clusters | Sensitive to starting centroids and outliers |
 
-### 10.2 K-Means++ Initialisation
+**Variants:** **K-Means++** (smarter starting centroids, spread apart) · **K-Medoids** (centre must be an actual data point → more robust to outliers).
 
-1. Pick the first centroid uniformly at random from the data.
-2. For each point, compute $D(\mathbf{x})$ = distance to nearest chosen centroid.
-3. Choose the next centroid with probability proportional to $D(\mathbf{x})^2$:
-
-```math
-P(\mathbf{x}_i) = \frac{D(\mathbf{x}_i)^2}{\sum_l D(\mathbf{x}_l)^2}
-```
-
-4. Repeat until $k$ centroids are chosen. Spreads out initial centroids → faster, better convergence.
-
-### 10.3 Choosing k — Elbow Method
-
-Plot WCSS vs $k$. WCSS always decreases with $k$; choose the $k$ at the "elbow" where the decrease sharply slows down. (Silhouette score can also be used — pick $k$ with the highest average silhouette.)
-
-### 10.4 K-Medoids (PAM — Partitioning Around Medoids)
-
-- Cluster centre must be an **actual data point** (medoid).
-- Minimises the sum of dissimilarities (any distance, e.g., Manhattan):
-
-```math
-J = \sum_{j=1}^k\sum_{\mathbf{x}_i\in C_j}d(\mathbf{x}_i, \mathbf{m}_j)
-```
-
-- **More robust to outliers** than K-Means; more expensive: $O(k(n-k)^2)$ per iteration.
-
-### 📝 Solved Numerical 10.1 — K-Means (k = 2)
+### 📝 Example 10.1 — K-Means with k = 2
 
 | Point | A | B | C | D | E | F | G |
 |---|---|---|---|---|---|---|---|
-| $x$ | 1 | 1.5 | 2.9 | 5 | 3.5 | 4.5 | 3.5 |
-| $y$ | 1 | 2 | 4 | 7 | 5 | 5 | 4.5 |
+| $(x, y)$ | (1,1) | (1.5,2) | (2.9,4) | (5,7) | (3.5,5) | (4.5,5) | (3.5,4.5) |
 
-Initial centroids: $\boldsymbol{\mu}_1 = A = (1, 1)$, $\boldsymbol{\mu}_2 = D = (5, 7)$.
+Start: $\mu_1 = A(1, 1)$, $\mu_2 = D(5, 7)$.
 
-**Iteration 1 — Assignment:**
+**Iteration 1 — assign:**
 
-| Point | $d$ to $\mu_1 (1,1)$ | $d$ to $\mu_2 (5,7)$ | Cluster |
+| Point | Dist to $\mu_1$ | Dist to $\mu_2$ | Cluster |
 |---|---|---|---|
-| A (1, 1) | 0 | 7.211 | 1 |
-| B (1.5, 2) | 1.118 | 6.103 | 1 |
-| C (2.9, 4) | 3.551 | 3.662 | 1 |
-| D (5, 7) | 7.211 | 0 | 2 |
-| E (3.5, 5) | 4.717 | 2.500 | 2 |
-| F (4.5, 5) | 5.315 | 2.062 | 2 |
-| G (3.5, 4.5) | 4.301 | 2.915 | 2 |
+| A | 0 | 7.21 | 1 |
+| B | 1.12 | 6.10 | 1 |
+| C | 3.55 | 3.66 | 1 |
+| D | 7.21 | 0 | 2 |
+| E | 4.72 | 2.50 | 2 |
+| F | 5.32 | 2.06 | 2 |
+| G | 4.30 | 2.92 | 2 |
 
-Example: $d(C, \mu_1) = \sqrt{(2.9-1)^2 + (4-1)^2} = \sqrt{3.61 + 9} = 3.551$.
+(e.g. $d(C, \mu_1) = \sqrt{1.9^2 + 3^2} = \sqrt{12.61} = 3.55$)
 
 **Update:**
 
 ```math
-\boldsymbol{\mu}_1 = \left(\frac{1 + 1.5 + 2.9}{3}, \frac{1 + 2 + 4}{3}\right) = (1.8,\ 2.333)
+\mu_1 = \left(\frac{1 + 1.5 + 2.9}{3}, \frac{1 + 2 + 4}{3}\right) = (1.8, 2.33) \qquad \mu_2 = \left(\frac{5 + 3.5 + 4.5 + 3.5}{4}, \frac{7 + 5 + 5 + 4.5}{4}\right) = (4.13, 5.38)
 ```
 
-```math
-\boldsymbol{\mu}_2 = \left(\frac{5 + 3.5 + 4.5 + 3.5}{4}, \frac{7 + 5 + 5 + 4.5}{4}\right) = (4.125,\ 5.375)
-```
-
-**Iteration 2 — Assignment:**
-
-| Point | $d$ to $\mu_1 (1.8, 2.333)$ | $d$ to $\mu_2 (4.125, 5.375)$ | Cluster |
-|---|---|---|---|
-| A | 1.555 | 5.376 | 1 |
-| B | 0.448 | 4.276 | 1 |
-| **C** | **1.997** | **1.842** | **2** ← moved! |
-| D | 5.658 | 1.846 | 2 |
-| E | 3.162 | 0.729 | 2 |
-| F | 3.795 | 0.530 | 2 |
-| G | 2.754 | 1.075 | 2 |
+**Iteration 2 — assign again:** point C is now closer to $\mu_2$ (1.84) than to $\mu_1$ (2.00) → **C moves to cluster 2**. All others stay.
 
 **Update:**
 
 ```math
-\boldsymbol{\mu}_1 = \left(\frac{1 + 1.5}{2}, \frac{1 + 2}{2}\right) = (1.25,\ 1.5)
+\mu_1 = (1.25, 1.5) \qquad \mu_2 = (3.88, 5.1)
 ```
 
-```math
-\boldsymbol{\mu}_2 = \left(\frac{2.9 + 5 + 3.5 + 4.5 + 3.5}{5}, \frac{4 + 7 + 5 + 5 + 4.5}{5}\right) = (3.88,\ 5.1)
-```
+**Iteration 3:** no point changes cluster → **stop**.
 
-**Iteration 3:** re-assigning gives the same clusters → **converged**.
-
-**Final clusters:** $C_1 = \lbrace A, B\rbrace$, $C_2 = \lbrace C, D, E, F, G\rbrace$. WCSS drops from 11.98 (after iteration 1) to **8.71** (final).
+**Final:** Cluster 1 = {A, B}, Cluster 2 = {C, D, E, F, G}.
 
 ---
 
 ## 11. Hierarchical Clustering
 
-Builds a **tree of clusters (dendrogram)**. No need to specify $k$ in advance — cut the dendrogram at the desired level.
+> 💡 **In simple words:** Start with every point as its own cluster, then keep **merging the two closest clusters** until only one is left. The merge history is drawn as a tree called a **dendrogram**.
 
-### 11.1 Types
+- **Agglomerative** = bottom-up (merge). **Divisive** = top-down (split).
+- No need to choose $k$ beforehand — just **cut the dendrogram** at the height you want.
 
-- **Agglomerative (bottom-up, AGNES):** start with each point as its own cluster; repeatedly merge the two closest clusters until one cluster remains.
-- **Divisive (top-down, DIANA):** start with all points in one cluster; recursively split.
+### 11.1 Linkage — "distance between two clusters"
 
-### 11.2 Agglomerative Algorithm
+| Linkage | Distance between clusters | Behaviour |
+|---|---|---|
+| **Single** | Closest pair of points (min) | Long, chain-like clusters |
+| **Complete** | Farthest pair of points (max) | Compact, round clusters |
+| **Average** | Average over all pairs | In between |
+| **Ward** | Increase in WCSS after merging | Similar to K-Means |
 
-1. Compute the $n \times n$ distance matrix.
-2. Treat each point as a cluster.
-3. Repeat: merge the two closest clusters; update the distance matrix using a **linkage** criterion.
-4. Stop when one cluster remains. Complexity $O(n^2\log n)$ to $O(n^3)$; memory $O(n^2)$.
-
-### 11.3 Linkage Criteria
-
-```math
-\text{Single (MIN): } d(C_i, C_j) = \min_{\mathbf{x}\in C_i,\,\mathbf{y}\in C_j}d(\mathbf{x},\mathbf{y})
-```
-
-```math
-\text{Complete (MAX): } d(C_i, C_j) = \max_{\mathbf{x}\in C_i,\,\mathbf{y}\in C_j}d(\mathbf{x},\mathbf{y})
-```
-
-```math
-\text{Average (UPGMA): } d(C_i, C_j) = \frac{1}{|C_i||C_j|}\sum_{\mathbf{x}\in C_i}\sum_{\mathbf{y}\in C_j}d(\mathbf{x},\mathbf{y})
-```
-
-```math
-\text{Centroid: } d(C_i, C_j) = \lVert\boldsymbol{\mu}_i - \boldsymbol{\mu}_j\rVert
-```
-
-```math
-\text{Ward: } \Delta(C_i, C_j) = \frac{|C_i||C_j|}{|C_i| + |C_j|}\lVert\boldsymbol{\mu}_i - \boldsymbol{\mu}_j\rVert^2 \quad \text{(increase in total WCSS after merging)}
-```
-
-**Lance–Williams update formula** (general form for updating distances after merging $C_i$ and $C_j$ into $C_{ij}$):
-
-```math
-d(C_k, C_{ij}) = \alpha_i\,d(C_k, C_i) + \alpha_j\,d(C_k, C_j) + \beta\,d(C_i, C_j) + \gamma\,|d(C_k, C_i) - d(C_k, C_j)|
-```
-
-(Single: $\alpha_i = \alpha_j = 1/2, \beta = 0, \gamma = -1/2$; Complete: $\gamma = +1/2$.)
-
-| Linkage | Behaviour |
-|---|---|
-| Single | Can find elongated shapes; suffers from **chaining** effect; sensitive to noise |
-| Complete | Compact, similar-diameter clusters; sensitive to outliers |
-| Average | Compromise between single and complete |
-| Ward | Minimises variance; similar to K-Means; spherical clusters |
-
-### 📝 Solved Numerical 11.1 — Agglomerative Clustering (Single & Complete)
+### 📝 Example 11.1 — Single and Complete Linkage
 
 Points on a line: A = 1, B = 2, C = 4.5, D = 8, E = 9.5.
 
 **Distance matrix:**
 
-|  | A | B | C | D | E |
+| | A | B | C | D | E |
 |---|---|---|---|---|---|
 | **A** | 0 | | | | |
 | **B** | 1 | 0 | | | |
@@ -815,51 +450,16 @@ Points on a line: A = 1, B = 2, C = 4.5, D = 8, E = 9.5.
 | **D** | 7 | 6 | 3.5 | 0 | |
 | **E** | 8.5 | 7.5 | 5 | 1.5 | 0 |
 
-#### Single Linkage
+**Single linkage (use the minimum):**
+1. Smallest = 1 → merge **{A,B}** at height 1.
+2. Next smallest = 1.5 → merge **{D,E}** at height 1.5.
+3. $d(AB, C) = \min(3.5, 2.5) = 2.5$; $d(C, DE) = \min(3.5, 5) = 3.5$ → merge **{A,B,C}** at 2.5.
+4. $d(ABC, DE) = \min(6, 3.5, \dots) = 3.5$ → merge all at 3.5.
 
-**Step 1:** smallest distance = 1 (A, B) → merge **{A,B}** at height 1.
-
-|  | AB | C | D | E |
-|---|---|---|---|---|
-| **AB** | 0 | | | |
-| **C** | min(3.5, 2.5) = 2.5 | 0 | | |
-| **D** | min(7, 6) = 6 | 3.5 | 0 | |
-| **E** | min(8.5, 7.5) = 7.5 | 5 | 1.5 | 0 |
-
-**Step 2:** smallest = 1.5 (D, E) → merge **{D,E}** at height 1.5.
-
-|  | AB | C | DE |
-|---|---|---|---|
-| **AB** | 0 | | |
-| **C** | 2.5 | 0 | |
-| **DE** | min(6, 7.5) = 6 | min(3.5, 5) = 3.5 | 0 |
-
-**Step 3:** smallest = 2.5 → merge **{A,B,C}** at height 2.5.
-
-**Step 4:** $d(ABC, DE) = \min(6, 3.5) = 3.5$ → merge all at height 3.5.
-
-#### Complete Linkage
-
-**Step 1:** merge {A,B} at 1. Updated: $d(AB, C) = \max(3.5, 2.5) = 3.5$, $d(AB, D) = 7$, $d(AB, E) = 8.5$.
-
-**Step 2:** merge {D,E} at 1.5. Updated: $d(AB, DE) = \max(7, 8.5) = 8.5$, $d(C, DE) = \max(3.5, 5) = 5$.
-
-**Step 3:** smallest among {3.5, 8.5, 5} = 3.5 → merge {A,B,C} at 3.5.
-
-**Step 4:** $d(ABC, DE) = \max(8.5, 5) = 8.5$ → merge all at 8.5.
-
-#### Average Linkage (for comparison)
-
-After {A,B} (1) and {D,E} (1.5): $d(AB, C) = (3.5 + 2.5)/2 = 3.0$; $d(C, DE) = (3.5 + 5)/2 = 4.25$; $d(AB, DE) = (7 + 8.5 + 6 + 7.5)/4 = 7.25$. Merge {A,B,C} at 3.0; final merge at $(7 + 8.5 + 6 + 7.5 + 3.5 + 5)/6 = 6.25$.
-
-**Merge heights summary:**
-
-| Merge | Single | Complete | Average |
-|---|---|---|---|
-| {A,B} | 1 | 1 | 1 |
-| {D,E} | 1.5 | 1.5 | 1.5 |
-| {A,B,C} | 2.5 | 3.5 | 3.0 |
-| All | 3.5 | 8.5 | 6.25 |
+**Complete linkage (use the maximum):**
+1. {A,B} at 1; {D,E} at 1.5.
+2. $d(AB, C) = \max(3.5, 2.5) = 3.5$; $d(C, DE) = \max(3.5, 5) = 5$ → merge **{A,B,C}** at 3.5.
+3. $d(ABC, DE) = \max(\text{all pairs}) = 8.5$ → merge all at 8.5.
 
 **Dendrogram (single linkage):**
 
@@ -876,218 +476,112 @@ Height
      +--------A-----B------C-------D---------E-----
 ```
 
-Cutting at height 3 gives 2 clusters: {A, B, C} and {D, E}.
+Cutting at height 3 → 2 clusters: {A, B, C} and {D, E}.
 
 ---
 
 ## 12. Cluster Validation and Evaluation
 
-### 12.1 Types of Validation
+> 💡 How do we know if the clusters are good?
+> - **Internal** measures: use only the data (are clusters tight and far apart?).
+> - **External** measures: compare with true labels, if we have them.
 
-| Type | Uses | Examples |
-|---|---|---|
-| **Internal** | Only the data and clustering (no labels) | SSE, Silhouette, Davies–Bouldin, Dunn, Calinski–Harabasz |
-| **External** | Compare with ground-truth labels | Purity, Rand Index, ARI, NMI, F-measure |
-| **Relative** | Compare different clusterings/values of $k$ | Elbow method, silhouette vs $k$ |
+### 12.1 Silhouette Score (internal) — most important
 
-### 12.2 Internal Measures
-
-**Cohesion (WCSS) and Separation (BCSS):**
+For each point $i$:
+- $a$ = average distance to points in **its own** cluster (want **small**)
+- $b$ = average distance to points in the **nearest other** cluster (want **large**)
 
 ```math
-WCSS = \sum_{j=1}^k\sum_{\mathbf{x}\in C_j}\lVert\mathbf{x} - \boldsymbol{\mu}_j\rVert^2, \qquad BCSS = \sum_{j=1}^k|C_j|\,\lVert\boldsymbol{\mu}_j - \boldsymbol{\mu}\rVert^2
+s(i) = \frac{b - a}{\max(a, b)}
 ```
 
-$TSS = WCSS + BCSS$ ($\boldsymbol{\mu}$ = overall mean).
+- $s \approx 1$ → well clustered · $s \approx 0$ → on the border · $s < 0$ → probably in the wrong cluster.
 
-**Silhouette Coefficient** (for point $i$):
+### 📝 Example 12.1 — Silhouette
 
-```math
-a(i) = \frac{1}{|C_I| - 1}\sum_{j\in C_I,\,j\neq i}d(i,j) \qquad \text{(mean distance to own cluster)}
-```
+Clusters: $C_1 = \lbrace 1, 2, 3\rbrace$, $C_2 = \lbrace 8, 9\rbrace$.
 
-```math
-b(i) = \min_{J\neq I}\frac{1}{|C_J|}\sum_{j\in C_J}d(i,j) \qquad \text{(mean distance to nearest other cluster)}
-```
-
-```math
-s(i) = \frac{b(i) - a(i)}{\max\lbrace a(i), b(i)\rbrace}, \qquad -1 \leq s(i) \leq 1
-```
-
-- $s \approx 1$: well clustered; $s \approx 0$: on the boundary; $s < 0$: probably in the wrong cluster.
-- Overall score = mean of $s(i)$ over all points.
-
-**Davies–Bouldin Index** (lower is better):
-
-```math
-DB = \frac{1}{k}\sum_{i=1}^k\max_{j\neq i}\left(\frac{S_i + S_j}{d(\boldsymbol{\mu}_i, \boldsymbol{\mu}_j)}\right), \qquad S_i = \frac{1}{|C_i|}\sum_{\mathbf{x}\in C_i}\lVert\mathbf{x} - \boldsymbol{\mu}_i\rVert
-```
-
-**Dunn Index** (higher is better):
-
-```math
-D = \frac{\min_{i\neq j}\delta(C_i, C_j)}{\max_l\Delta(C_l)}
-```
-
-$\delta$ = minimum distance between points of different clusters; $\Delta$ = diameter (maximum intra-cluster distance).
-
-**Calinski–Harabasz Index** (higher is better):
-
-```math
-CH = \frac{BCSS/(k - 1)}{WCSS/(n - k)}
-```
-
-### 📝 Solved Numerical 12.1 — Silhouette, DB, Dunn, CH
-
-1-D data: $C_1 = \lbrace 1, 2, 3\rbrace$, $C_2 = \lbrace 8, 9\rbrace$.
-
-**Silhouette for each point:**
-
-| Point | $a(i)$ | $b(i)$ | $s(i) = (b-a)/\max(a,b)$ |
+| Point | $a$ (own cluster) | $b$ (other cluster) | $s$ |
 |---|---|---|---|
-| 1 | $(1 + 2)/2 = 1.5$ | $(7 + 8)/2 = 7.5$ | $6/7.5 = 0.800$ |
-| 2 | $(1 + 1)/2 = 1.0$ | $(6 + 7)/2 = 6.5$ | $5.5/6.5 = 0.846$ |
-| 3 | $(2 + 1)/2 = 1.5$ | $(5 + 6)/2 = 5.5$ | $4/5.5 = 0.727$ |
-| 8 | $1/1 = 1.0$ | $(7 + 6 + 5)/3 = 6.0$ | $5/6 = 0.833$ |
-| 9 | $1.0$ | $(8 + 7 + 6)/3 = 7.0$ | $6/7 = 0.857$ |
+| 1 | $(1 + 2)/2 = 1.5$ | $(7 + 8)/2 = 7.5$ | $6/7.5 = 0.80$ |
+| 2 | $(1 + 1)/2 = 1.0$ | $(6 + 7)/2 = 6.5$ | $5.5/6.5 = 0.85$ |
+| 3 | $(2 + 1)/2 = 1.5$ | $(5 + 6)/2 = 5.5$ | $4/5.5 = 0.73$ |
+| 8 | 1 | $(7 + 6 + 5)/3 = 6$ | $5/6 = 0.83$ |
+| 9 | 1 | $(8 + 7 + 6)/3 = 7$ | $6/7 = 0.86$ |
 
-```math
-\bar{s} = \frac{0.800 + 0.846 + 0.727 + 0.833 + 0.857}{5} = 0.813
-```
+Average $= 0.81$ → very good clustering.
 
-Excellent clustering.
+### 12.2 Other Internal Measures
 
-**Davies–Bouldin:** $\mu_1 = 2$, $\mu_2 = 8.5$. $S_1 = (1 + 0 + 1)/3 = 0.667$, $S_2 = (0.5 + 0.5)/2 = 0.5$.
+| Measure | Idea | Better when |
+|---|---|---|
+| WCSS / SSE | Total squared distance to centroids | Lower |
+| Davies–Bouldin | Average similarity of each cluster with its most similar one | Lower |
+| Dunn index | $\frac{\text{smallest gap between clusters}}{\text{largest cluster width}}$ | Higher |
 
-```math
-DB = \frac{0.667 + 0.5}{|2 - 8.5|} = \frac{1.167}{6.5} = 0.180
-```
-
-**Dunn:** min inter-cluster distance $= |3 - 8| = 5$; max diameter $= \max(|3 - 1|, |9 - 8|) = 2$ → $D = 5/2 = 2.5$.
-
-**Calinski–Harabasz:** overall mean $= 23/5 = 4.6$.
-
-```math
-BCSS = 3(2 - 4.6)^2 + 2(8.5 - 4.6)^2 = 3(6.76) + 2(15.21) = 50.7
-```
-
-```math
-WCSS = (1 + 0 + 1) + (0.25 + 0.25) = 2.5, \qquad CH = \frac{50.7/1}{2.5/3} = 60.84
-```
+For Example 12.1: smallest gap = $8 - 3 = 5$, largest width = $3 - 1 = 2$ → Dunn $= 5/2 = 2.5$.
 
 ### 12.3 External Measures
 
-**Purity:**
+**Purity** — for each cluster, count its most common true class:
 
 ```math
-\text{Purity} = \frac{1}{n}\sum_{j=1}^k\max_i|C_j\cap T_i|
+\text{Purity} = \frac{1}{n}\sum_{\text{clusters}}\max(\text{count of one class in the cluster})
 ```
 
-($T_i$ = true class $i$.) Purity = 1 is perfect, but it is trivially 1 if every point is its own cluster.
-
-**Rand Index:** consider all $\binom{n}{2}$ pairs of points.
-- $a$ = pairs in the same class **and** same cluster (TP)
-- $b$ = pairs in different classes **and** different clusters (TN)
-- $c$ = same class, different clusters (FN); $d$ = different classes, same cluster (FP)
+**Rand Index** — look at every pair of points; count pairs where clustering and true labels **agree** (both "same group" or both "different group"):
 
 ```math
-RI = \frac{a + b}{a + b + c + d} = \frac{a + b}{\binom{n}{2}}
+RI = \frac{\text{agreeing pairs}}{\text{total pairs}} = \frac{a + b}{\binom{n}{2}}
 ```
 
-**Adjusted Rand Index** (corrects for chance; 0 = random, 1 = perfect). With contingency table entries $n_{ij}$, row sums $a_i$, column sums $b_j$:
+### 📝 Example 12.2 — Purity and Rand Index
+
+True labels: $(0, 0, 0, 1, 1, 1)$. Clusters: $(0, 0, 1, 1, 1, 1)$.
+
+| | Cluster 0 | Cluster 1 |
+|---|---|---|
+| Class 0 | 2 | 1 |
+| Class 1 | 0 | 3 |
 
 ```math
-ARI = \frac{\sum_{ij}\binom{n_{ij}}{2} - \left[\sum_i\binom{a_i}{2}\sum_j\binom{b_j}{2}\right]/\binom{n}{2}}{\frac{1}{2}\left[\sum_i\binom{a_i}{2} + \sum_j\binom{b_j}{2}\right] - \left[\sum_i\binom{a_i}{2}\sum_j\binom{b_j}{2}\right]/\binom{n}{2}}
+\text{Purity} = \frac{2 + 3}{6} = 0.83
 ```
 
-**Normalized Mutual Information:**
+**Rand Index:** total pairs $= \binom{6}{2} = 15$.
+- Same class & same cluster ($a$): pair (1,2) in cluster 0 + 3 pairs among points 4,5,6 → $a = 4$
+- Different class & different cluster ($b$): $b = 6$
 
 ```math
-NMI(Y, C) = \frac{2\,I(Y; C)}{H(Y) + H(C)}, \qquad I(Y;C) = \sum_{i,j}P(i,j)\log\frac{P(i,j)}{P(i)P(j)}
+RI = \frac{4 + 6}{15} = 0.67
 ```
-
-**F-measure:** for class $i$ and cluster $j$, precision $= n_{ij}/|C_j|$, recall $= n_{ij}/|T_i|$, $F = 2PR/(P+R)$.
-
-### 📝 Solved Numerical 12.2 — Purity, Rand Index, ARI
-
-6 points. True labels: $(0, 0, 0, 1, 1, 1)$. Cluster labels: $(0, 0, 1, 1, 1, 1)$.
-
-**Contingency table:**
-
-|  | Cluster 0 | Cluster 1 | Row sum |
-|---|---|---|---|
-| Class 0 | 2 | 1 | 3 |
-| Class 1 | 0 | 3 | 3 |
-| Col sum | 2 | 4 | 6 |
-
-**Purity:**
-
-```math
-\text{Purity} = \frac{\max(2, 0) + \max(1, 3)}{6} = \frac{2 + 3}{6} = 0.833
-```
-
-**Rand Index:** total pairs $\binom{6}{2} = 15$.
-
-- $a$ (same class, same cluster): $\binom{2}{2} + \binom{1}{2} + \binom{0}{2} + \binom{3}{2} = 1 + 0 + 0 + 3 = 4$
-- Same-class pairs: $\binom{3}{2} + \binom{3}{2} = 6$ → $c = 6 - 4 = 2$
-- Same-cluster pairs: $\binom{2}{2} + \binom{4}{2} = 1 + 6 = 7$ → $d = 7 - 4 = 3$
-- $b = 15 - 4 - 2 - 3 = 6$
-
-```math
-RI = \frac{4 + 6}{15} = 0.667
-```
-
-**ARI:**
-
-```math
-\text{Expected} = \frac{6 \times 7}{15} = 2.8, \qquad \text{Max} = \frac{6 + 7}{2} = 6.5
-```
-
-```math
-ARI = \frac{4 - 2.8}{6.5 - 2.8} = \frac{1.2}{3.7} = 0.324
-```
-
-RI (0.667) looks decent, but ARI (0.324) reveals the clustering is only moderately better than random.
-
-💡 **Exam tip:** For K-Means numericals, always show the distance table for every iteration and clearly state the convergence check. For hierarchical, redraw the updated distance matrix after each merge.
 
 ---
 
-## 13. Formula Sheet
+## ✅ Quick Revision
 
 | Concept | Formula |
 |---|---|
-| OLS slope | $\beta_1 = S_{xy}/S_{xx} = \frac{\sum(x-\bar{x})(y-\bar{y})}{\sum(x-\bar{x})^2}$ |
-| OLS intercept | $\beta_0 = \bar{y} - \beta_1\bar{x}$ |
-| Correlation | $r = S_{xy}/\sqrt{S_{xx}S_{yy}}$ |
+| Slope | $\beta_1 = \frac{\sum(x-\bar{x})(y-\bar{y})}{\sum(x-\bar{x})^2}$ |
+| Intercept | $\beta_0 = \bar{y} - \beta_1\bar{x}$ |
 | Normal equation | $\boldsymbol{\beta} = (X^TX)^{-1}X^T\mathbf{y}$ |
-| GD for LR | $\partial J/\partial w = -\frac{2}{n}\sum x_i(y_i - \hat{y}_i)$ |
-| MSE / RMSE / MAE | $\frac{1}{n}\sum e^2$ / $\sqrt{\text{MSE}}$ / $\frac{1}{n}\sum\lvert e\rvert$ |
+| MSE / RMSE / MAE | $\frac{1}{n}\sum r^2$ / $\sqrt{\text{MSE}}$ / $\frac{1}{n}\sum\lvert r\rvert$ |
 | $R^2$ | $1 - SSE/SST$ |
 | Adjusted $R^2$ | $1 - \frac{(1-R^2)(n-1)}{n-p-1}$ |
-| Huber | $\frac{1}{2}r^2$ if $\lvert r\rvert\leq\delta$, else $\delta(\lvert r\rvert - \delta/2)$ |
-| Log-cosh | $\ln\cosh(r)$ |
-| Quantile | $\tau r$ if $r\geq 0$, $(\tau-1)r$ otherwise |
-| Nadaraya–Watson | $\hat{y} = \sum K_iy_i/\sum K_i$ |
-| Gaussian kernel | $\exp(-(x_0-x_i)^2/2h^2)$ |
-| Euclidean / Manhattan | $\sqrt{\sum(x_j-y_j)^2}$ / $\sum\lvert x_j - y_j\rvert$ |
-| Minkowski | $(\sum\lvert x_j-y_j\rvert^p)^{1/p}$ |
-| Mahalanobis | $\sqrt{(\mathbf{x}-\mathbf{y})^T\Sigma^{-1}(\mathbf{x}-\mathbf{y})}$ |
-| Cosine similarity | $\mathbf{x}\cdot\mathbf{y}/(\lVert\mathbf{x}\rVert\lVert\mathbf{y}\rVert)$ |
-| Jaccard | $\lvert A\cap B\rvert/\lvert A\cup B\rvert$ |
-| SMC | $(M_{11}+M_{00})/\text{total}$ |
-| K-Means objective | $\sum_j\sum_{\mathbf{x}\in C_j}\lVert\mathbf{x}-\boldsymbol{\mu}_j\rVert^2$ |
-| Centroid update | $\boldsymbol{\mu}_j = \frac{1}{\lvert C_j\rvert}\sum_{\mathbf{x}\in C_j}\mathbf{x}$ |
-| K-Means++ | $P(\mathbf{x}) \propto D(\mathbf{x})^2$ |
-| Single / Complete linkage | min / max pairwise distance |
-| Ward | $\frac{\lvert C_i\rvert\lvert C_j\rvert}{\lvert C_i\rvert+\lvert C_j\rvert}\lVert\boldsymbol{\mu}_i-\boldsymbol{\mu}_j\rVert^2$ |
-| Silhouette | $s = (b-a)/\max(a,b)$ |
-| Davies–Bouldin | $\frac{1}{k}\sum_i\max_{j\neq i}\frac{S_i+S_j}{d(\mu_i,\mu_j)}$ |
-| Dunn | min inter-cluster distance / max diameter |
-| Calinski–Harabasz | $\frac{BCSS/(k-1)}{WCSS/(n-k)}$ |
-| Purity | $\frac{1}{n}\sum_j\max_i\lvert C_j\cap T_i\rvert$ |
-| Rand Index | $(a+b)/\binom{n}{2}$ |
-| NMI | $2I(Y;C)/(H(Y)+H(C))$ |
+| Huber | $\frac{1}{2}r^2$ if small, $\delta(\lvert r\rvert - \delta/2)$ if large |
+| Kernel regression | $\frac{\sum K_iy_i}{\sum K_i}$ |
+| Euclidean / Manhattan | $\sqrt{\sum(x-y)^2}$ / $\sum\lvert x-y\rvert$ |
+| Cosine similarity | $\frac{\mathbf{x}\cdot\mathbf{y}}{\lVert\mathbf{x}\rVert\lVert\mathbf{y}\rVert}$ |
+| Jaccard | $\frac{\lvert A\cap B\rvert}{\lvert A\cup B\rvert}$ |
+| Centroid | mean of points in the cluster |
+| WCSS | $\sum_j\sum_{\mathbf{x}\in C_j}\lVert\mathbf{x}-\boldsymbol{\mu}_j\rVert^2$ |
+| Single / Complete linkage | min / max distance between clusters |
+| Silhouette | $\frac{b-a}{\max(a,b)}$ |
+| Purity | $\frac{1}{n}\sum\max(\text{class count})$ |
+| Rand Index | $\frac{a+b}{\binom{n}{2}}$ |
+
+**Likely exam questions:** Fit a regression line + find $R^2$ · MSE vs MAE vs Huber · K-Means iterations · Single vs complete linkage with dendrogram · Silhouette calculation · Classification vs clustering.
 
 ---
 
