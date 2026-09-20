@@ -2,577 +2,352 @@
 
 [⬅ Back to Index](README.md)
 
-## Contents
-1. [Overview of Classification](#1-overview-of-classification)
-2. [Evaluation Metrics for Classification](#2-evaluation-metrics-for-classification)
-3. [Decision Boundaries and Their Properties](#3-decision-boundaries-and-their-properties)
-4. [Linear Classifiers](#4-linear-classifiers)
-5. [Multi-class Classification Strategies](#5-multi-class-classification-strategies)
-6. [Bayes Theorem](#6-bayes-theorem)
-7. [Naïve Bayes Classifier](#7-naïve-bayes-classifier)
-8. [Bayesian Decision Theory](#8-bayesian-decision-theory)
-9. [Formula Sheet](#9-formula-sheet)
+**In this unit:** what classification is → decision boundaries → linear classifiers (Perceptron, Logistic Regression) → handling many classes → Bayes theorem → Naïve Bayes → Bayesian decision theory.
 
 ---
 
 ## 1. Overview of Classification
 
-**Classification** is a supervised learning task where the output $y$ belongs to a finite set of **classes** (categories). The model learns a mapping $h:\mathcal{X}\rightarrow\lbrace C_1, C_2, \dots, C_K\rbrace$.
+> 💡 **In simple words:** Classification means putting things into **categories**. Is this email spam or not? Is this digit a 0, 1, … or 9?
 
-### 1.1 Types of Classification
-
-| Type | Description | Example |
+| Type | Meaning | Example |
 |---|---|---|
-| **Binary** | Two classes | Spam / Not spam, Disease / Healthy |
-| **Multi-class** | More than two mutually exclusive classes | Digit recognition (0–9), species of iris |
-| **Multi-label** | Each instance can have multiple labels | A movie tagged as both *Action* and *Comedy* |
-| **Imbalanced** | One class heavily outnumbers others | Fraud detection (0.1% fraud) |
+| Binary | 2 classes | Spam / Not spam |
+| Multi-class | More than 2 classes, pick one | Digit 0–9 |
+| Multi-label | Can belong to several classes at once | A movie that is both *Action* and *Comedy* |
 
-### 1.2 Classification Workflow
+**Steps:** collect labelled data → clean it → split into train/test → train the model → test it → use it.
 
-```mermaid
-flowchart LR
-    A[Collect labelled data] --> B[Preprocess: clean, encode, scale]
-    B --> C[Split: train / validation / test]
-    C --> D[Train classifier]
-    D --> E[Tune hyperparameters]
-    E --> F[Evaluate on test set]
-    F --> G[Deploy & monitor]
-```
+### 1.1 Measuring a Classifier — Confusion Matrix
 
-### 1.3 Types of Classifiers
-
-- **Discriminative models** learn $P(y \mid x)$ or the boundary directly — Logistic Regression, SVM, Perceptron, Decision Trees.
-- **Generative models** learn $P(x \mid y)$ and $P(y)$, then use Bayes' theorem to get $P(y \mid x)$ — Naïve Bayes, Gaussian Discriminant Analysis.
-
----
-
-## 2. Evaluation Metrics for Classification
-
-### 2.1 Confusion Matrix (binary)
-
-|  | **Predicted Positive** | **Predicted Negative** |
+| | Predicted **Yes** | Predicted **No** |
 |---|---|---|
-| **Actual Positive** | TP (True Positive) | FN (False Negative) |
-| **Actual Negative** | FP (False Positive) | TN (True Negative) |
-
-### 2.2 Metrics
+| **Actually Yes** | TP (True Positive) | FN (False Negative) |
+| **Actually No** | FP (False Positive) | TN (True Negative) |
 
 ```math
-\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
+\text{Accuracy} = \frac{TP + TN}{\text{Total}} \qquad \text{Precision} = \frac{TP}{TP + FP} \qquad \text{Recall} = \frac{TP}{TP + FN}
 ```
 
 ```math
-\text{Precision} = \frac{TP}{TP + FP} \qquad \text{Recall (Sensitivity, TPR)} = \frac{TP}{TP + FN}
+F_1 = \frac{2 \times \text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+```
+
+- **Precision:** of everything I *said* was Yes, how many really were?
+- **Recall:** of everything that *really* was Yes, how many did I catch?
+
+### 📝 Example 1.1
+
+TP = 30, FN = 10, FP = 5, TN = 55 (total 100).
+
+```math
+\text{Accuracy} = \frac{85}{100} = 0.85, \quad \text{Precision} = \frac{30}{35} = 0.857, \quad \text{Recall} = \frac{30}{40} = 0.75
 ```
 
 ```math
-\text{Specificity (TNR)} = \frac{TN}{TN + FP} \qquad \text{FPR} = \frac{FP}{FP + TN} = 1 - \text{Specificity}
-```
-
-```math
-F_1 = \frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \qquad F_\beta = \frac{(1+\beta^2)\cdot P \cdot R}{\beta^2 P + R}
-```
-
-### 📝 Solved Numerical 2.1 — Confusion Matrix Metrics
-
-A classifier on 100 patients gives TP = 30, FN = 10, FP = 5, TN = 55.
-
-```math
-\text{Accuracy} = \frac{30 + 55}{100} = 0.85
-```
-
-```math
-\text{Precision} = \frac{30}{30+5} = 0.857, \qquad \text{Recall} = \frac{30}{30+10} = 0.75
-```
-
-```math
-\text{Specificity} = \frac{55}{55+5} = 0.917, \qquad F_1 = \frac{2(0.857)(0.75)}{0.857+0.75} = \frac{1.2855}{1.607} = 0.80
+F_1 = \frac{2(0.857)(0.75)}{0.857 + 0.75} = 0.80
 ```
 
 ---
 
-## 3. Decision Boundaries and Their Properties
+## 2. Decision Boundaries
 
-### 3.1 Definition
+> 💡 **In simple words:** The decision boundary is the **line (or curve) that separates the classes**. One side = class A, other side = class B.
 
-A **decision boundary** is the surface in feature space that separates regions assigned to different classes. On the boundary, the classifier is equally inclined to both classes.
+### 2.1 Linear Boundary
 
-For a classifier with discriminant functions $g_1(x), g_2(x)$: predict class 1 if $g_1(x) > g_2(x)$. The boundary is:
-
-```math
-g_1(x) = g_2(x) \quad \Longleftrightarrow \quad g(x) = g_1(x) - g_2(x) = 0
-```
-
-### 3.2 Linear Decision Boundary (Hyperplane)
+In 2D it is a straight line; in 3D a plane; in more dimensions a "hyperplane":
 
 ```math
-g(\mathbf{x}) = \mathbf{w}^T\mathbf{x} + b = w_1x_1 + w_2x_2 + \dots + w_dx_d + b = 0
+w_1x_1 + w_2x_2 + b = 0 \qquad \text{(general form: } \mathbf{w}^T\mathbf{x} + b = 0\text{)}
 ```
 
-- In 2D it is a **line**, in 3D a **plane**, in $d$-D a **hyperplane** of dimension $d-1$.
-- $\mathbf{w}$ is **normal (perpendicular)** to the hyperplane — it sets the orientation.
-- $b$ shifts the hyperplane away from the origin. Distance of hyperplane from origin $= \lvert b\rvert / \lVert\mathbf{w}\rVert$.
-- **Signed distance** of any point $\mathbf{x}$ from the hyperplane:
+- If $w_1x_1 + w_2x_2 + b > 0$ → **Class +1**
+- If $w_1x_1 + w_2x_2 + b < 0$ → **Class −1**
+- $\mathbf{w}$ decides the **direction** of the line (it is perpendicular to it), $b$ **shifts** it.
+
+**Distance of a point from the line:**
 
 ```math
-r = \frac{g(\mathbf{x})}{\lVert \mathbf{w} \rVert} = \frac{\mathbf{w}^T\mathbf{x} + b}{\sqrt{w_1^2 + w_2^2 + \dots + w_d^2}}
+d = \frac{w_1x_1 + w_2x_2 + b}{\sqrt{w_1^2 + w_2^2}}
 ```
 
-  $r > 0$ → positive side (class +1), $r < 0$ → negative side (class −1).
+### 2.2 Properties of Decision Boundaries
 
-**Proof that w is normal:** take two points $\mathbf{x}_A, \mathbf{x}_B$ on the hyperplane. Then $\mathbf{w}^T\mathbf{x}_A + b = 0$ and $\mathbf{w}^T\mathbf{x}_B + b = 0$. Subtracting: $\mathbf{w}^T(\mathbf{x}_A - \mathbf{x}_B) = 0$, so $\mathbf{w}$ is perpendicular to every vector lying in the hyperplane.
-
-### 3.3 Properties of Decision Boundaries
-
-| Property | Explanation |
+| Property | Meaning |
 |---|---|
-| **Linear vs non-linear** | Linear models → straight boundaries; KNN, trees, kernel SVM, neural nets → curved/complex boundaries |
-| **Complexity** | More flexible boundaries fit training data better but risk overfitting |
-| **Margin** | Distance from boundary to nearest training point; larger margin → better generalization (SVM idea) |
-| **Smoothness** | Smooth boundaries generalise better than jagged ones |
-| **Linear separability** | Data is linearly separable if some hyperplane perfectly separates the classes. XOR is **not** linearly separable |
-| **Axis-parallel** | Decision trees create boundaries parallel to feature axes (staircase-like) |
-| **Piecewise linear** | 1-NN creates a Voronoi tessellation — piecewise linear boundaries |
-| **Quadratic** | Gaussian Bayes classifier with unequal covariances gives quadratic boundaries (ellipses, parabolas, hyperbolas) |
+| Linear / non-linear | Straight line (logistic regression) vs curve (KNN, trees, neural nets) |
+| Margin | Gap between the boundary and the nearest points — **bigger margin = better generalization** (SVM idea) |
+| Linearly separable | A straight line can perfectly separate the classes. **XOR is not** linearly separable |
+| Complexity | Very wiggly boundary → overfitting; too simple → underfitting |
+| Shape by model | Decision tree → staircase (axis-parallel); 1-NN → piecewise; Gaussian Bayes → curves |
 
-### 3.4 Margin (SVM concept)
-
-For a separating hyperplane scaled so that the closest points satisfy $\lvert\mathbf{w}^T\mathbf{x}+b\rvert = 1$:
+**SVM margin** (for reference):
 
 ```math
-\text{Margin} = \frac{2}{\lVert \mathbf{w} \rVert}
+\text{Margin} = \frac{2}{\lVert\mathbf{w}\rVert} = \frac{2}{\sqrt{w_1^2 + w_2^2 + \dots}}
 ```
 
-Maximising the margin is equivalent to:
+### 📝 Example 2.1
+
+Line: $3x_1 + 4x_2 - 10 = 0$. Classify point $(4, 3)$.
 
 ```math
-\min_{\mathbf{w},b}\ \frac{1}{2}\lVert\mathbf{w}\rVert^2 \quad \text{subject to} \quad y_i(\mathbf{w}^T\mathbf{x}_i + b) \geq 1,\ \ i = 1,\dots,m
-```
-
-### 📝 Solved Numerical 3.1 — Distance from a Hyperplane
-
-Hyperplane: $3x_1 + 4x_2 - 10 = 0$. Classify the point $\mathbf{x} = (4, 3)$ and find its distance.
-
-```math
-g(\mathbf{x}) = 3(4) + 4(3) - 10 = 14 > 0 \Rightarrow \text{Class } +1
+3(4) + 4(3) - 10 = 14 > 0 \Rightarrow \text{Class } +1
 ```
 
 ```math
-r = \frac{14}{\sqrt{3^2+4^2}} = \frac{14}{5} = 2.8 \text{ units}
+d = \frac{14}{\sqrt{9 + 16}} = \frac{14}{5} = 2.8 \text{ units}
 ```
-
-Distance of the hyperplane from the origin $= \lvert -10\rvert/5 = 2$.
-
-### 📝 Solved Numerical 3.2 — Margin
-
-If an SVM finds $\mathbf{w} = (3, 4)$, the margin $= 2/\lVert\mathbf{w}\rVert = 2/5 = 0.4$.
 
 ---
 
-## 4. Linear Classifiers
+## 3. Linear Classifiers
 
-A linear classifier predicts:
-
-```math
-\hat{y} = \text{sign}(\mathbf{w}^T\mathbf{x} + b) = \begin{cases} +1 & \text{if } \mathbf{w}^T\mathbf{x} + b \geq 0 \\ -1 & \text{otherwise} \end{cases}
-```
-
-### 4.1 The Perceptron (Rosenblatt, 1958)
-
-**Model:** $\hat{y} = \text{step}(\mathbf{w}^T\mathbf{x} + b)$.
-
-**Learning rule** (for each misclassified example):
+> 💡 **In simple words:** A linear classifier multiplies each feature by a weight, adds them up, and checks if the total is positive or negative.
 
 ```math
-\mathbf{w} \leftarrow \mathbf{w} + \eta\,(y - \hat{y})\,\mathbf{x}, \qquad b \leftarrow b + \eta\,(y - \hat{y})
+\hat{y} = \text{sign}(w_1x_1 + w_2x_2 + \dots + w_dx_d + b)
 ```
 
-For labels in $\lbrace -1, +1 \rbrace$ the equivalent form is: if $y_i(\mathbf{w}^T\mathbf{x}_i + b) \leq 0$ then $\mathbf{w} \leftarrow \mathbf{w} + \eta y_i \mathbf{x}_i$, $b \leftarrow b + \eta y_i$.
+### 3.1 Perceptron
 
-**Perceptron Convergence Theorem:** If data is linearly separable with margin $\gamma$ and $\lVert\mathbf{x}_i\rVert \leq R$, the perceptron makes at most
+**Rule:** output 1 if $z = \mathbf{w}^T\mathbf{x} + b > 0$, else 0. When the prediction is wrong, adjust:
 
 ```math
-\left(\frac{R}{\gamma}\right)^2
+w_i \leftarrow w_i + \eta\,(y - \hat{y})\,x_i \qquad b \leftarrow b + \eta\,(y - \hat{y})
 ```
 
-mistakes. If data is **not** linearly separable (e.g., XOR), it never converges.
+- $\eta$ = learning rate, $y - \hat{y}$ = error (0 if correct → no change).
+- Works only if the data is **linearly separable** (fails on XOR).
 
-### 📝 Solved Numerical 4.1 — Perceptron for AND Gate
+### 📝 Example 3.1 — Perceptron Learns the AND Gate
 
-Train a perceptron for the AND gate. Initial $w_1 = 1, w_2 = 1, b = 0$, $\eta = 0.5$. Output $= 1$ if $z = w_1x_1 + w_2x_2 + b > 0$, else 0.
+Start: $w_1 = 1, w_2 = 1, b = 0$, $\eta = 0.5$.
 
 **Epoch 1**
 
-| $x_1$ | $x_2$ | $z$ | $\hat{y}$ | $y$ | Error $e = y-\hat{y}$ | New $w_1$ | New $w_2$ | New $b$ |
+| $x_1$ | $x_2$ | $z$ | $\hat{y}$ | $y$ | error | $w_1$ | $w_2$ | $b$ |
 |---|---|---|---|---|---|---|---|---|
 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 0 |
 | 0 | 1 | 1 | 1 | 0 | −1 | 1 | 0.5 | −0.5 |
 | 1 | 0 | 0.5 | 1 | 0 | −1 | 0.5 | 0.5 | −1 |
 | 1 | 1 | 0 | 0 | 1 | +1 | 1 | 1 | −0.5 |
 
-Example of one update (row 2): $w_2 = 1 + 0.5(-1)(1) = 0.5$, $b = 0 + 0.5(-1) = -0.5$.
+(Row 2 update: $w_2 = 1 + 0.5(-1)(1) = 0.5$, $b = 0 + 0.5(-1) = -0.5$.)
 
 **Epoch 2**
 
-| $x_1$ | $x_2$ | $z$ | $\hat{y}$ | $y$ | $e$ | $w_1$ | $w_2$ | $b$ |
+| $x_1$ | $x_2$ | $z$ | $\hat{y}$ | $y$ | error | $w_1$ | $w_2$ | $b$ |
 |---|---|---|---|---|---|---|---|---|
 | 0 | 0 | −0.5 | 0 | 0 | 0 | 1 | 1 | −0.5 |
 | 0 | 1 | 0.5 | 1 | 0 | −1 | 1 | 0.5 | −1 |
 | 1 | 0 | 0 | 0 | 0 | 0 | 1 | 0.5 | −1 |
 | 1 | 1 | 0.5 | 1 | 1 | 0 | 1 | 0.5 | −1 |
 
-**Epoch 3:** $z = -1, -0.5, 0, 0.5$ → outputs $0,0,0,1$ — all correct, no updates. **Converged.**
+**Epoch 3:** $z = -1, -0.5, 0, 0.5$ → outputs $0, 0, 0, 1$ ✅ all correct. **Done!**
 
-**Final model:** $w_1 = 1$, $w_2 = 0.5$, $b = -1$. Decision boundary: $x_1 + 0.5x_2 - 1 = 0$.
+**Final:** $w_1 = 1$, $w_2 = 0.5$, $b = -1$.
 
-### 4.2 Logistic Regression
+### 3.2 Logistic Regression
 
-Despite its name, it is a **classification** model. It passes the linear score through the **sigmoid** function to get a probability:
-
-```math
-z = \mathbf{w}^T\mathbf{x} + b, \qquad \sigma(z) = \frac{1}{1 + e^{-z}}, \qquad P(y=1 \mid \mathbf{x}) = \sigma(z)
-```
-
-**Properties of sigmoid:**
+> 💡 Same linear score, but squashed into a **probability between 0 and 1** using the sigmoid function.
 
 ```math
-\sigma(0) = 0.5, \quad \sigma(-z) = 1 - \sigma(z), \quad \frac{d\sigma}{dz} = \sigma(z)\,(1 - \sigma(z))
+z = \mathbf{w}^T\mathbf{x} + b \qquad \sigma(z) = \frac{1}{1 + e^{-z}} \qquad P(y = 1) = \sigma(z)
 ```
 
-**Log-odds (logit) is linear:**
+- $\sigma(0) = 0.5$. Predict 1 if $\sigma(z) \geq 0.5$ (i.e. $z \geq 0$).
+- Useful fact: $\sigma'(z) = \sigma(z)(1 - \sigma(z))$.
+
+**Loss (binary cross-entropy):**
 
 ```math
-\ln\frac{P(y=1\mid\mathbf{x})}{1 - P(y=1\mid\mathbf{x})} = \mathbf{w}^T\mathbf{x} + b
+J = -\frac{1}{m}\sum_{i=1}^{m}\left[y_i\ln\hat{p}_i + (1 - y_i)\ln(1 - \hat{p}_i)\right]
 ```
 
-Decision rule: predict 1 if $\sigma(z) \geq 0.5 \Leftrightarrow z \geq 0$, so the boundary $\mathbf{w}^T\mathbf{x}+b=0$ is **linear**.
-
-**Loss — Binary Cross-Entropy (Log Loss):**
+**Update (gradient descent):**
 
 ```math
-J(\mathbf{w}, b) = -\frac{1}{m}\sum_{i=1}^{m}\left[y_i\ln\hat{p}_i + (1-y_i)\ln(1-\hat{p}_i)\right], \qquad \hat{p}_i = \sigma(\mathbf{w}^T\mathbf{x}_i + b)
+w_j \leftarrow w_j - \eta\,(\hat{p} - y)\,x_j \qquad b \leftarrow b - \eta\,(\hat{p} - y)
 ```
 
-**Gradients** (derived using $\sigma' = \sigma(1-\sigma)$):
+### 📝 Example 3.2 — Logistic Regression
+
+$\mathbf{w} = (0.5, -0.25)$, $b = 0.2$, input $\mathbf{x} = (2, 4)$, true $y = 1$, $\eta = 0.1$.
+
+**Step 1:** $z = 0.5(2) - 0.25(4) + 0.2 = 0.2$
+
+**Step 2:** $\hat{p} = \dfrac{1}{1 + e^{-0.2}} = \dfrac{1}{1.8187} = 0.55$ → predict **class 1**.
+
+**Step 3 (loss):** $J = -\ln(0.55) = 0.598$
+
+**Step 4 (update):** error $= \hat{p} - y = 0.55 - 1 = -0.45$
 
 ```math
-\frac{\partial J}{\partial \mathbf{w}} = \frac{1}{m}\sum_{i=1}^m(\hat{p}_i - y_i)\,\mathbf{x}_i, \qquad \frac{\partial J}{\partial b} = \frac{1}{m}\sum_{i=1}^m(\hat{p}_i - y_i)
+w_1 = 0.5 - 0.1(-0.45)(2) = 0.59, \quad w_2 = -0.25 - 0.1(-0.45)(4) = -0.07, \quad b = 0.2 - 0.1(-0.45) = 0.245
 ```
-
-**Gradient descent update:**
-
-```math
-\mathbf{w} \leftarrow \mathbf{w} - \eta\,\frac{\partial J}{\partial \mathbf{w}}, \qquad b \leftarrow b - \eta\,\frac{\partial J}{\partial b}
-```
-
-### 📝 Solved Numerical 4.2 — Logistic Regression Prediction and One Update
-
-Given $\mathbf{w} = (0.5, -0.25)$, $b = 0.2$, a student with $\mathbf{x} = (2, 4)$ (hours studied, hours of sleep lost) and true label $y = 1$ (passed). Learning rate $\eta = 0.1$.
-
-**Step 1 — score:**
-
-```math
-z = 0.5(2) + (-0.25)(4) + 0.2 = 1 - 1 + 0.2 = 0.2
-```
-
-**Step 2 — probability:**
-
-```math
-\hat{p} = \sigma(0.2) = \frac{1}{1+e^{-0.2}} = \frac{1}{1 + 0.8187} = 0.5498
-```
-
-Prediction: $\hat{p} \geq 0.5$ → class 1 (pass).
-
-**Step 3 — loss:**
-
-```math
-J = -\ln(0.5498) = 0.5982
-```
-
-**Step 4 — gradients:** $\hat{p} - y = 0.5498 - 1 = -0.4502$
-
-```math
-\frac{\partial J}{\partial w_1} = -0.4502 \times 2 = -0.9004, \quad \frac{\partial J}{\partial w_2} = -0.4502 \times 4 = -1.8008, \quad \frac{\partial J}{\partial b} = -0.4502
-```
-
-**Step 5 — update:**
-
-```math
-w_1 = 0.5 - 0.1(-0.9004) = 0.5900, \quad w_2 = -0.25 - 0.1(-1.8008) = -0.0699, \quad b = 0.2 - 0.1(-0.4502) = 0.2450
-```
-
-### 4.3 Other Linear Classifiers
-
-| Classifier | Idea | Loss |
-|---|---|---|
-| Perceptron | Update on mistakes | $\max(0, -y\,\mathbf{w}^T\mathbf{x})$ |
-| Logistic Regression | Probabilistic, sigmoid output | Log loss |
-| Linear SVM | Maximum margin | Hinge: $\max(0, 1 - y\,\mathbf{w}^T\mathbf{x})$ |
-| LDA (Fisher) | Maximise between-class / within-class variance | $J(\mathbf{w}) = \frac{(\mathbf{w}^T(\mu_1-\mu_2))^2}{\mathbf{w}^T S_W \mathbf{w}}$ |
-
-**Fisher LDA solution:**
-
-```math
-\mathbf{w}^{\ast} \propto S_W^{-1}(\boldsymbol{\mu}_1 - \boldsymbol{\mu}_2), \qquad S_W = \sum_{\mathbf{x}\in C_1}(\mathbf{x}-\boldsymbol{\mu}_1)(\mathbf{x}-\boldsymbol{\mu}_1)^T + \sum_{\mathbf{x}\in C_2}(\mathbf{x}-\boldsymbol{\mu}_2)(\mathbf{x}-\boldsymbol{\mu}_2)^T
-```
-
-**Limitation of linear classifiers:** they cannot solve non-linearly-separable problems like XOR unless features are transformed (e.g., add $x_1x_2$) or kernels are used.
 
 ---
 
-## 5. Multi-class Classification Strategies
+## 4. Multi-class Classification: One-vs-All and One-vs-One
 
-Many classifiers (Perceptron, SVM, Logistic Regression) are inherently binary. To handle $K > 2$ classes we decompose the problem.
+> 💡 **In simple words:** Many classifiers only know "yes / no". To handle 3+ classes, we break the problem into several yes/no problems.
 
-### 5.1 One-vs-All (One-vs-Rest, OvA / OvR)
-
-- Train **$K$ binary classifiers**. Classifier $k$ treats class $k$ as positive and all other classes as negative.
-- Prediction: pick the class whose classifier gives the highest score/confidence:
-
-```math
-\hat{y} = \arg\max_{k \in \lbrace 1,\dots,K\rbrace} f_k(\mathbf{x})
-```
-
-**Pros:** only $K$ classifiers; simple. **Cons:** each classifier sees **imbalanced** data (1 class vs $K-1$ classes); scores from different classifiers may not be calibrated; ambiguous regions possible.
-
-### 5.2 One-vs-One (OvO)
-
-- Train one binary classifier for **every pair** of classes:
+### 4.1 One-vs-All (One-vs-Rest)
+- Train **one classifier per class**: "Is it class $k$, or anything else?"
+- Predict the class whose classifier is **most confident**.
 
 ```math
-\text{Number of classifiers} = \binom{K}{2} = \frac{K(K-1)}{2}
+\text{Number of classifiers} = K
 ```
 
-- Prediction: each classifier votes; the class with the **most votes** wins (majority voting).
+### 4.2 One-vs-One
+- Train **one classifier for every pair** of classes (A vs B, A vs C, …).
+- Each classifier **votes**; the class with the most votes wins.
 
-**Pros:** each classifier trains on a smaller, balanced subset (only 2 classes) — good for algorithms that scale badly with data size (e.g., kernel SVM). **Cons:** number of classifiers grows quadratically; ties in voting possible.
+```math
+\text{Number of classifiers} = \frac{K(K-1)}{2}
+```
 
-### 5.3 Comparison
-
-| Aspect | One-vs-All | One-vs-One |
+| | One-vs-All | One-vs-One |
 |---|---|---|
-| Number of classifiers | $K$ | $K(K-1)/2$ |
-| Training data per classifier | All $m$ examples | Only examples of 2 classes (≈ $2m/K$) |
-| Class imbalance | Yes | No (roughly balanced) |
+| Classifiers | $K$ | $K(K-1)/2$ |
+| Data per classifier | All data | Only 2 classes' data |
+| Problem | Imbalanced (1 class vs many) | Many classifiers for large $K$ |
 | Prediction | Highest score | Majority vote |
-| Used by default in | Logistic Regression (sklearn) | SVC (sklearn) |
 
-### 5.4 Native Multi-class: Softmax Regression
+### 📝 Example 4.1
 
-```math
-P(y = k \mid \mathbf{x}) = \frac{e^{\mathbf{w}_k^T\mathbf{x}}}{\sum_{j=1}^{K} e^{\mathbf{w}_j^T\mathbf{x}}}, \qquad J = -\frac{1}{m}\sum_{i=1}^m\sum_{k=1}^K y_{ik}\ln\hat{p}_{ik}
-```
+$K = 4$: OvA → 4 classifiers; OvO → $\frac{4 \times 3}{2} = 6$ classifiers.
+$K = 10$: OvA → 10; OvO → 45.
 
-### 📝 Solved Numerical 5.1 — Number of Classifiers
+### 📝 Example 4.2 — OvA Prediction
 
-For $K = 4$ classes: OvA needs $4$ classifiers; OvO needs $\frac{4 \times 3}{2} = 6$ classifiers.
-For $K = 10$ (digits): OvA needs $10$; OvO needs $\frac{10 \times 9}{2} = 45$.
+Scores: Cat = 0.62, **Dog = 0.81**, Bird = 0.15 → **Dog**.
 
-### 📝 Solved Numerical 5.2 — OvA Prediction
+### 📝 Example 4.3 — OvO Voting (classes A, B, C)
 
-Three OvA classifiers output confidence scores for a test point: $f_{\text{Cat}} = 0.62$, $f_{\text{Dog}} = 0.81$, $f_{\text{Bird}} = 0.15$.
+| Pair | A vs B | A vs C | B vs C |
+|---|---|---|---|
+| Winner | A | C | C |
 
-```math
-\hat{y} = \arg\max(0.62, 0.81, 0.15) = \text{Dog}
-```
+Votes: A = 1, B = 0, **C = 2** → **C**.
 
-### 📝 Solved Numerical 5.3 — OvO Voting
+### 4.3 Softmax (for reference)
 
-Classes A, B, C, D (6 pairwise classifiers). Outputs for a test point:
-
-| Classifier | A vs B | A vs C | A vs D | B vs C | B vs D | C vs D |
-|---|---|---|---|---|---|---|
-| Winner | A | C | A | B | D | C |
-
-Votes: A = 2, B = 1, C = 2, D = 1. **Tie between A and C** → break the tie using the A-vs-C classifier (C won) or by summed confidence. **Prediction: C.**
-
-### 📝 Solved Numerical 5.4 — Softmax
-
-Scores for 3 classes: $z = (2.0, 1.0, 0.1)$.
+Turns scores $z_k$ into probabilities that add up to 1:
 
 ```math
-e^{2.0} = 7.389, \quad e^{1.0} = 2.718, \quad e^{0.1} = 1.105, \quad \text{Sum} = 11.212
+P(\text{class } k) = \frac{e^{z_k}}{\sum_j e^{z_j}}
 ```
 
-```math
-P = \left(\frac{7.389}{11.212}, \frac{2.718}{11.212}, \frac{1.105}{11.212}\right) = (0.659, 0.242, 0.099)
-```
-
-Prediction: class 1.
+Scores $(2, 1, 0.1)$ → $e^z = (7.39, 2.72, 1.11)$, sum 11.21 → probabilities $(0.66, 0.24, 0.10)$.
 
 ---
 
-## 6. Bayes Theorem
+## 5. Bayes Theorem
 
-### 6.1 Statement
+> 💡 **In simple words:** Update your belief when you see new evidence.
 
 ```math
 P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}
 ```
 
-In classification language (class $C_k$, features $\mathbf{x}$):
+In classification terms:
 
 ```math
-\underbrace{P(C_k \mid \mathbf{x})}_{\text{posterior}} = \frac{\overbrace{P(\mathbf{x} \mid C_k)}^{\text{likelihood}}\ \overbrace{P(C_k)}^{\text{prior}}}{\underbrace{P(\mathbf{x})}_{\text{evidence}}}
+\underbrace{P(\text{class} \mid \text{data})}_{\text{Posterior}} = \frac{\overbrace{P(\text{data} \mid \text{class})}^{\text{Likelihood}} \times \overbrace{P(\text{class})}^{\text{Prior}}}{\underbrace{P(\text{data})}_{\text{Evidence}}}
 ```
 
-**Evidence (total probability theorem):**
+| Term | Meaning |
+|---|---|
+| Prior | How common the class is *before* seeing data |
+| Likelihood | How likely this data is *if* it belongs to the class |
+| Posterior | Probability of the class *after* seeing data |
+| Evidence | Total probability of the data (same for all classes) |
+
+**Evidence** (total probability):
 
 ```math
-P(\mathbf{x}) = \sum_{j=1}^{K} P(\mathbf{x} \mid C_j)\,P(C_j)
+P(B) = P(B \mid A)P(A) + P(B \mid \text{not } A)P(\text{not } A)
 ```
 
-### 6.2 Derivation
+**MAP rule:** choose the class with the highest posterior. Since the evidence is the same for every class, just compare **likelihood × prior**.
 
-From the definition of conditional probability:
+### 📝 Example 5.1 — Medical Test (very common exam question)
+
+1% of people have a disease. The test catches 99% of sick people, but also wrongly says "positive" for 5% of healthy people. You test positive. Chance you are sick?
 
 ```math
-P(A \cap B) = P(A \mid B)\,P(B) = P(B \mid A)\,P(A)
+P(+) = 0.99 \times 0.01 + 0.05 \times 0.99 = 0.0099 + 0.0495 = 0.0594
 ```
-
-Dividing both sides by $P(B)$ gives Bayes' theorem.
-
-### 6.3 MAP and ML Decisions
-
-**Maximum A Posteriori (MAP):**
 
 ```math
-\hat{y}_{MAP} = \arg\max_k P(C_k \mid \mathbf{x}) = \arg\max_k P(\mathbf{x} \mid C_k)\,P(C_k)
+P(\text{Sick} \mid +) = \frac{0.0099}{0.0594} = 0.167 \approx 17\%
 ```
 
-($P(\mathbf{x})$ is the same for all classes, so it can be dropped.)
+Only 17%! Because the disease is rare, most positives are false alarms.
 
-**Maximum Likelihood (ML):** if all priors are equal,
+### 📝 Example 5.2 — Which Machine?
 
-```math
-\hat{y}_{ML} = \arg\max_k P(\mathbf{x} \mid C_k)
-```
-
-### 📝 Solved Numerical 6.1 — Medical Test (classic)
-
-A disease affects 1% of the population. A test detects it correctly 99% of the time (sensitivity), but gives a false positive 5% of the time. A person tests positive. What is the probability they actually have the disease?
-
-**Given:** $P(D) = 0.01$, $P(\neg D) = 0.99$, $P(+ \mid D) = 0.99$, $P(+ \mid \neg D) = 0.05$.
-
-**Evidence:**
-
-```math
-P(+) = P(+\mid D)P(D) + P(+\mid\neg D)P(\neg D) = 0.99(0.01) + 0.05(0.99) = 0.0099 + 0.0495 = 0.0594
-```
-
-**Posterior:**
-
-```math
-P(D \mid +) = \frac{0.0099}{0.0594} = 0.1667
-```
-
-**Only 16.7%!** The low prior (rare disease) dominates. This is the **base rate fallacy**.
-
-### 📝 Solved Numerical 6.2 — Factory Machines
-
-Machines M1, M2, M3 produce 50%, 30%, 20% of items with defect rates 2%, 3%, 4%. An item is defective. Which machine most likely made it?
+Machines M1, M2, M3 make 50%, 30%, 20% of items; defect rates 2%, 3%, 4%. An item is defective — which machine made it?
 
 ```math
 P(\text{Def}) = 0.5(0.02) + 0.3(0.03) + 0.2(0.04) = 0.010 + 0.009 + 0.008 = 0.027
 ```
 
 ```math
-P(M1\mid\text{Def}) = \frac{0.010}{0.027} = 0.370, \quad P(M2\mid\text{Def}) = \frac{0.009}{0.027} = 0.333, \quad P(M3\mid\text{Def}) = \frac{0.008}{0.027} = 0.296
+P(M1 \mid \text{Def}) = \frac{0.010}{0.027} = 0.37, \quad P(M2 \mid \text{Def}) = 0.33, \quad P(M3 \mid \text{Def}) = 0.30
 ```
 
-**Answer:** M1 (MAP decision).
+**Answer: M1.**
 
 ---
 
-## 7. Naïve Bayes Classifier
+## 6. Naïve Bayes Classifier
 
-### 7.1 The Naïve Assumption
-
-Computing $P(x_1, x_2, \dots, x_d \mid C_k)$ directly needs exponentially many parameters. Naïve Bayes assumes the features are **conditionally independent given the class**:
+> 💡 **In simple words:** Use Bayes theorem, but assume all features are **independent** of each other (given the class). This "naïve" assumption makes the math very easy.
 
 ```math
-P(x_1, x_2, \dots, x_d \mid C_k) = \prod_{j=1}^{d} P(x_j \mid C_k)
+P(x_1, x_2, \dots, x_d \mid C) = P(x_1 \mid C) \times P(x_2 \mid C) \times \dots \times P(x_d \mid C)
 ```
 
-### 7.2 Classification Rule
+**Prediction rule:**
 
 ```math
-\hat{y} = \arg\max_{k}\ P(C_k)\prod_{j=1}^{d}P(x_j \mid C_k)
+\hat{y} = \arg\max_{C}\ P(C) \prod_{j=1}^{d} P(x_j \mid C)
 ```
 
-**Log form** (avoids numerical underflow from multiplying many small numbers):
+($\prod$ means multiply all the terms.)
+
+**How to get the numbers:**
 
 ```math
-\hat{y} = \arg\max_{k}\left[\ln P(C_k) + \sum_{j=1}^{d}\ln P(x_j \mid C_k)\right]
+P(C) = \frac{\text{no. of examples in class } C}{\text{total examples}} \qquad P(x_j = v \mid C) = \frac{\text{no. of class-}C\text{ examples with } x_j = v}{\text{no. of examples in class } C}
 ```
 
-### 7.3 Parameter Estimation
+### 6.1 Laplace Smoothing (fixing zero probabilities)
 
-**Prior:**
+If a value never appeared with a class, its probability is 0 and the whole product becomes 0. Fix: add 1 to every count.
 
 ```math
-P(C_k) = \frac{N_k}{N} \qquad (N_k = \text{number of training examples in class } k)
+P(x_j = v \mid C) = \frac{\text{count} + 1}{N_C + V}
 ```
 
-**Categorical features:**
+($N_C$ = examples (or words) in class C, $V$ = number of possible values (or vocabulary size).)
+
+### 6.2 Gaussian Naïve Bayes (numeric features)
 
 ```math
-P(x_j = v \mid C_k) = \frac{\text{count}(x_j = v,\ y = C_k)}{N_k}
+P(x \mid C) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x - \mu)^2}{2\sigma^2}\right)
 ```
 
-### 7.4 Zero-Frequency Problem and Laplace Smoothing
+($\mu$, $\sigma$ = mean and standard deviation of that feature within class C.)
 
-If some value never occurs with a class in training, its probability is 0, and the whole product becomes 0. **Laplace (add-one) smoothing:**
+### 📝 Example 6.1 — Play Tennis (MOST IMPORTANT)
 
-```math
-P(x_j = v \mid C_k) = \frac{\text{count}(x_j = v,\ y = C_k) + \alpha}{N_k + \alpha\,V_j}
-```
-
-where $V_j$ = number of distinct values of feature $j$ and $\alpha = 1$ for Laplace smoothing ($0 < \alpha < 1$ is Lidstone smoothing).
-
-### 7.5 Variants of Naïve Bayes
-
-**(a) Gaussian NB** — for continuous features:
-
-```math
-P(x_j \mid C_k) = \frac{1}{\sqrt{2\pi\sigma_{jk}^2}}\exp\left(-\frac{(x_j - \mu_{jk})^2}{2\sigma_{jk}^2}\right)
-```
-
-where $\mu_{jk}$ and $\sigma_{jk}^2$ are the mean and variance of feature $j$ within class $k$:
-
-```math
-\mu_{jk} = \frac{1}{N_k}\sum_{i:\,y_i = k} x_{ij}, \qquad \sigma_{jk}^2 = \frac{1}{N_k}\sum_{i:\,y_i=k}(x_{ij} - \mu_{jk})^2
-```
-
-**(b) Multinomial NB** — for word counts (text classification):
-
-```math
-P(w \mid C_k) = \frac{\text{count}(w, C_k) + 1}{\sum_{w'} \text{count}(w', C_k) + |V|}
-```
-
-($|V|$ = vocabulary size.)
-
-**(c) Bernoulli NB** — for binary features (word present/absent):
-
-```math
-P(\mathbf{x} \mid C_k) = \prod_{j=1}^d p_{jk}^{x_j}(1 - p_{jk})^{1 - x_j}
-```
-
-### 7.6 Advantages and Disadvantages
-
-| Advantages | Disadvantages |
-|---|---|
-| Very fast to train and predict | Independence assumption rarely true |
-| Works well with small data and high dimensions (text) | Probability estimates are poorly calibrated |
-| Handles multi-class naturally | Zero-frequency problem (needs smoothing) |
-| Robust to irrelevant features | Correlated features are "double counted" |
-
-### 📝 Solved Numerical 7.1 — Play Tennis (the most important exam problem)
-
-**Dataset (14 days):**
-
-| Day | Outlook | Temperature | Humidity | Wind | Play |
+| Day | Outlook | Temp | Humidity | Wind | Play |
 |---|---|---|---|---|---|
 | 1 | Sunny | Hot | High | Weak | No |
 | 2 | Sunny | Hot | High | Strong | No |
@@ -589,286 +364,162 @@ P(\mathbf{x} \mid C_k) = \prod_{j=1}^d p_{jk}^{x_j}(1 - p_{jk})^{1 - x_j}
 | 13 | Overcast | Hot | Normal | Weak | Yes |
 | 14 | Rain | Mild | High | Strong | No |
 
-**Classify:** $\mathbf{x}$ = (Outlook = Sunny, Temp = Cool, Humidity = High, Wind = Strong).
+**Classify:** (Sunny, Cool, High, Strong)
 
-**Step 1 — Priors:** 9 Yes, 5 No.
+**Step 1 — Priors:** 9 Yes, 5 No → $P(\text{Yes}) = 9/14$, $P(\text{No}) = 5/14$.
 
-```math
-P(\text{Yes}) = \frac{9}{14} = 0.643, \qquad P(\text{No}) = \frac{5}{14} = 0.357
-```
+**Step 2 — Count from the table:**
 
-**Step 2 — Likelihoods (count from table):**
-
-| Feature value | $P(\cdot \mid \text{Yes})$ | $P(\cdot \mid \text{No})$ |
+| Feature | P(· \| Yes) | P(· \| No) |
 |---|---|---|
-| Outlook = Sunny | 2/9 | 3/5 |
-| Temp = Cool | 3/9 | 1/5 |
-| Humidity = High | 3/9 | 4/5 |
-| Wind = Strong | 3/9 | 3/5 |
+| Sunny | 2/9 | 3/5 |
+| Cool | 3/9 | 1/5 |
+| High | 3/9 | 4/5 |
+| Strong | 3/9 | 3/5 |
 
-**Step 3 — Unnormalised posteriors:**
+**Step 3 — Multiply:**
 
 ```math
-P(\text{Yes})\prod P(x_j\mid\text{Yes}) = \frac{9}{14}\cdot\frac{2}{9}\cdot\frac{3}{9}\cdot\frac{3}{9}\cdot\frac{3}{9} = 0.643 \times 0.222 \times 0.333 \times 0.333 \times 0.333 = 0.00529
+\text{Yes: } \frac{9}{14} \times \frac{2}{9} \times \frac{3}{9} \times \frac{3}{9} \times \frac{3}{9} = 0.0053
 ```
 
 ```math
-P(\text{No})\prod P(x_j\mid\text{No}) = \frac{5}{14}\cdot\frac{3}{5}\cdot\frac{1}{5}\cdot\frac{4}{5}\cdot\frac{3}{5} = 0.357 \times 0.6 \times 0.2 \times 0.8 \times 0.6 = 0.02057
+\text{No: } \frac{5}{14} \times \frac{3}{5} \times \frac{1}{5} \times \frac{4}{5} \times \frac{3}{5} = 0.0206
 ```
 
 **Step 4 — Normalise:**
 
 ```math
-P(\text{Yes}\mid\mathbf{x}) = \frac{0.00529}{0.00529 + 0.02057} = 0.205, \qquad P(\text{No}\mid\mathbf{x}) = \frac{0.02057}{0.02586} = 0.795
+P(\text{No} \mid \mathbf{x}) = \frac{0.0206}{0.0053 + 0.0206} = 0.795
 ```
 
 **Answer: Play = No** (79.5%).
 
-### 📝 Solved Numerical 7.2 — Text Classification with Laplace Smoothing
+### 📝 Example 6.2 — Spam Filter with Laplace Smoothing
 
-**Training documents:**
-
-| Doc | Text | Class |
+| Doc | Words | Class |
 |---|---|---|
 | 1 | free money | Spam |
 | 2 | free offer now | Spam |
 | 3 | meeting now | Ham |
 | 4 | project meeting money | Ham |
 
-Classify: **"free money now"**.
+Classify **"free money now"**. Vocabulary = {free, money, offer, now, meeting, project} → $V = 6$. Spam has 5 words, Ham has 5 words. Priors = 0.5 each.
 
-**Vocabulary:** {free, money, offer, now, meeting, project} → $|V| = 6$.
-Total words: Spam = 5, Ham = 5. Priors: $P(\text{Spam}) = P(\text{Ham}) = 2/4 = 0.5$.
-
-**Word counts:**
-
-| Word | Count in Spam | Count in Ham |
-|---|---|---|
-| free | 2 | 0 |
-| money | 1 | 1 |
-| now | 1 | 1 |
-
-**Smoothed likelihoods** (denominator $5 + 6 = 11$ for both classes):
+| Word | Spam count | $P(\cdot \mid \text{Spam})$ | Ham count | $P(\cdot \mid \text{Ham})$ |
+|---|---|---|---|---|
+| free | 2 | $\frac{2+1}{5+6} = 0.273$ | 0 | $\frac{0+1}{11} = 0.091$ |
+| money | 1 | $\frac{2}{11} = 0.182$ | 1 | $\frac{2}{11} = 0.182$ |
+| now | 1 | $\frac{2}{11} = 0.182$ | 1 | $\frac{2}{11} = 0.182$ |
 
 ```math
-P(\text{free}\mid S) = \frac{2+1}{11} = 0.2727, \quad P(\text{money}\mid S) = \frac{1+1}{11} = 0.1818, \quad P(\text{now}\mid S) = \frac{1+1}{11} = 0.1818
+\text{Spam: } 0.5 \times 0.273 \times 0.182 \times 0.182 = 0.00451 \qquad \text{Ham: } 0.5 \times 0.091 \times 0.182 \times 0.182 = 0.00150
+```
+
+**Answer: Spam** (75%). Without smoothing, "free" would give Ham a probability of 0.
+
+### 📝 Example 6.3 — Gaussian Naïve Bayes
+
+Fruit weight $x = 6$. Class A: $\mu = 5.5$, $\sigma = 0.5$, prior 0.4. Class B: $\mu = 7$, $\sigma = 1$, prior 0.6.
+
+```math
+P(6 \mid A) = \frac{1}{\sqrt{2\pi(0.25)}}e^{-\frac{(0.5)^2}{0.5}} = 0.798 \times 0.607 = 0.484
 ```
 
 ```math
-P(\text{free}\mid H) = \frac{0+1}{11} = 0.0909, \quad P(\text{money}\mid H) = \frac{2}{11} = 0.1818, \quad P(\text{now}\mid H) = \frac{2}{11} = 0.1818
+P(6 \mid B) = \frac{1}{\sqrt{2\pi}}e^{-\frac{1}{2}} = 0.399 \times 0.607 = 0.242
 ```
 
-Without smoothing, $P(\text{free}\mid H) = 0$ would make the Ham score exactly 0.
+A: $0.4 \times 0.484 = 0.194$ · B: $0.6 \times 0.242 = 0.145$ → **Class A**.
 
-**Scores:**
-
-```math
-\text{Spam: } 0.5 \times 0.2727 \times 0.1818 \times 0.1818 = 0.004508
-```
-
-```math
-\text{Ham: } 0.5 \times 0.0909 \times 0.1818 \times 0.1818 = 0.001503
-```
-
-```math
-P(\text{Spam}\mid\text{doc}) = \frac{0.004508}{0.004508 + 0.001503} = 0.75
-```
-
-**Answer: Spam.**
-
-### 📝 Solved Numerical 7.3 — Gaussian Naïve Bayes
-
-Classify a fruit with weight feature $x = 6$ (in 100 g). Class A: $\mu = 5.5, \sigma = 0.5$, prior 0.4. Class B: $\mu = 7, \sigma = 1$, prior 0.6.
-
-```math
-P(x=6\mid A) = \frac{1}{\sqrt{2\pi(0.25)}}\exp\left(-\frac{(6-5.5)^2}{2(0.25)}\right) = \frac{1}{1.2533}e^{-0.5} = 0.7979 \times 0.6065 = 0.4839
-```
-
-```math
-P(x=6\mid B) = \frac{1}{\sqrt{2\pi}}\exp\left(-\frac{(6-7)^2}{2}\right) = 0.3989 \times 0.6065 = 0.2420
-```
-
-```math
-\text{A: } 0.4 \times 0.4839 = 0.1936, \qquad \text{B: } 0.6 \times 0.2420 = 0.1452
-```
-
-```math
-P(A\mid x) = \frac{0.1936}{0.1936 + 0.1452} = 0.571
-```
-
-**Answer: Class A.**
+**Pros:** fast, works well for text, needs little data. **Cons:** independence assumption is rarely true.
 
 ---
 
-## 8. Bayesian Decision Theory
+## 7. Bayesian Decision Theory
 
-A fundamental statistical approach to classification that quantifies the trade-offs between decisions using **probabilities and costs**.
+> 💡 **In simple words:** Choose the action with the **lowest expected cost**, not just the highest probability. Because some mistakes are worse than others (missing a disease is worse than a false alarm).
 
-### 8.1 Setup
+**Loss** $\lambda_{ij}$ = cost of taking action $i$ when the true class is $j$.
 
-- Classes (states of nature): $\omega_1, \omega_2, \dots, \omega_c$
-- Actions: $\alpha_1, \alpha_2, \dots, \alpha_a$ (usually $\alpha_i$ = "decide $\omega_i$")
-- **Loss function** $\lambda(\alpha_i \mid \omega_j) = \lambda_{ij}$: cost of taking action $\alpha_i$ when the true class is $\omega_j$.
-
-### 8.2 Conditional Risk
-
-Expected loss of taking action $\alpha_i$ after observing $\mathbf{x}$:
+**Conditional risk** (expected cost of action $\alpha_i$):
 
 ```math
-R(\alpha_i \mid \mathbf{x}) = \sum_{j=1}^{c}\lambda(\alpha_i \mid \omega_j)\,P(\omega_j \mid \mathbf{x})
+R(\alpha_i \mid x) = \sum_{j} \lambda_{ij}\,P(\omega_j \mid x)
 ```
 
-### 8.3 Bayes Decision Rule
+**Bayes decision rule:** pick the action with the **minimum risk**.
 
-Choose the action with **minimum conditional risk**:
+**Two-class form** — decide class 1 if:
 
 ```math
-\alpha^{\ast}(\mathbf{x}) = \arg\min_{i} R(\alpha_i \mid \mathbf{x})
+\frac{P(\omega_1 \mid x)}{P(\omega_2 \mid x)} > \frac{\lambda_{12} - \lambda_{22}}{\lambda_{21} - \lambda_{11}}
 ```
 
-**Overall risk:**
+**Special case — 0–1 loss** (every mistake costs 1): risk $= 1 - P(\omega_i \mid x)$, so minimum risk = **maximum posterior** (the MAP rule).
+
+### 📝 Example 7.1 — Minimum Risk
+
+$P(\text{Disease} \mid x) = 0.3$, $P(\text{Healthy} \mid x) = 0.7$.
+
+| | True: Disease | True: Healthy |
+|---|---|---|
+| Say "Disease" | 0 | 1 |
+| Say "Healthy" | **10** | 0 |
 
 ```math
-R = \int R(\alpha(\mathbf{x}) \mid \mathbf{x})\,p(\mathbf{x})\,d\mathbf{x}
-```
-
-The Bayes rule minimises the overall risk; the minimum value is called the **Bayes risk** — the best achievable performance.
-
-### 8.4 Two-Class Case
-
-```math
-R(\alpha_1\mid\mathbf{x}) = \lambda_{11}P(\omega_1\mid\mathbf{x}) + \lambda_{12}P(\omega_2\mid\mathbf{x})
+R(\text{say Disease}) = 0(0.3) + 1(0.7) = 0.7
 ```
 
 ```math
-R(\alpha_2\mid\mathbf{x}) = \lambda_{21}P(\omega_1\mid\mathbf{x}) + \lambda_{22}P(\omega_2\mid\mathbf{x})
+R(\text{say Healthy}) = 10(0.3) + 0(0.7) = 3.0
 ```
 
-Decide $\omega_1$ if $R(\alpha_1\mid\mathbf{x}) < R(\alpha_2\mid\mathbf{x})$, which simplifies to:
+**Decision: say "Disease"** (lower risk), even though disease is less likely! Missing it is 10× more costly.
 
-```math
-(\lambda_{21} - \lambda_{11})\,P(\omega_1\mid\mathbf{x}) > (\lambda_{12} - \lambda_{22})\,P(\omega_2\mid\mathbf{x})
-```
+<details>
+<summary>📘 Optional: Decision boundary for two Gaussian classes</summary>
 
-**Likelihood Ratio Test** (using Bayes' theorem):
-
-```math
-\text{Decide } \omega_1 \text{ if } \quad \frac{p(\mathbf{x}\mid\omega_1)}{p(\mathbf{x}\mid\omega_2)} > \frac{(\lambda_{12}-\lambda_{22})}{(\lambda_{21}-\lambda_{11})}\cdot\frac{P(\omega_2)}{P(\omega_1)} = \theta
-```
-
-### 8.5 Minimum-Error-Rate Classification (0–1 Loss)
-
-```math
-\lambda(\alpha_i\mid\omega_j) = \begin{cases} 0 & i = j \\ 1 & i \neq j \end{cases}
-```
-
-Then:
-
-```math
-R(\alpha_i\mid\mathbf{x}) = \sum_{j\neq i}P(\omega_j\mid\mathbf{x}) = 1 - P(\omega_i\mid\mathbf{x})
-```
-
-Minimising risk = **maximising posterior** → the **MAP rule**. Probability of error:
-
-```math
-P(\text{error}\mid\mathbf{x}) = 1 - \max_i P(\omega_i\mid\mathbf{x})
-```
-
-### 8.6 Discriminant Functions
-
-Classifier assigns $\mathbf{x}$ to $\omega_i$ if $g_i(\mathbf{x}) > g_j(\mathbf{x})$ for all $j\neq i$. Equivalent choices:
-
-```math
-g_i(\mathbf{x}) = P(\omega_i\mid\mathbf{x}) \quad\text{or}\quad g_i(\mathbf{x}) = p(\mathbf{x}\mid\omega_i)P(\omega_i) \quad\text{or}\quad g_i(\mathbf{x}) = \ln p(\mathbf{x}\mid\omega_i) + \ln P(\omega_i)
-```
-
-**For Gaussian class-conditional densities** $p(\mathbf{x}\mid\omega_i) = \mathcal{N}(\boldsymbol{\mu}_i, \Sigma_i)$:
-
-```math
-g_i(\mathbf{x}) = -\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu}_i)^T\Sigma_i^{-1}(\mathbf{x}-\boldsymbol{\mu}_i) - \frac{d}{2}\ln 2\pi - \frac{1}{2}\ln|\Sigma_i| + \ln P(\omega_i)
-```
-
-| Case | Covariance | Discriminant | Boundary |
-|---|---|---|---|
-| 1 | $\Sigma_i = \sigma^2 I$ | $g_i = -\frac{\lVert\mathbf{x}-\boldsymbol{\mu}_i\rVert^2}{2\sigma^2} + \ln P(\omega_i)$ | Linear (perpendicular bisector if equal priors) |
-| 2 | $\Sigma_i = \Sigma$ (shared) | $g_i = -\frac{1}{2}(\mathbf{x}-\boldsymbol{\mu}_i)^T\Sigma^{-1}(\mathbf{x}-\boldsymbol{\mu}_i) + \ln P(\omega_i)$ | Linear (not necessarily perpendicular) |
-| 3 | $\Sigma_i$ arbitrary | Full formula | Quadratic (hyperquadrics) |
-
-**Case 1 expanded** — it is linear in $\mathbf{x}$:
-
-```math
-g_i(\mathbf{x}) = \mathbf{w}_i^T\mathbf{x} + w_{i0}, \qquad \mathbf{w}_i = \frac{\boldsymbol{\mu}_i}{\sigma^2}, \qquad w_{i0} = -\frac{\boldsymbol{\mu}_i^T\boldsymbol{\mu}_i}{2\sigma^2} + \ln P(\omega_i)
-```
-
-**1-D boundary for two Gaussians with equal variance** (set $g_1 = g_2$):
+With 1-D Gaussians having equal variance $\sigma^2$, the boundary is:
 
 ```math
 x^{\ast} = \frac{\mu_1 + \mu_2}{2} + \frac{\sigma^2}{\mu_1 - \mu_2}\ln\frac{P(\omega_2)}{P(\omega_1)}
 ```
 
-With equal priors, $x^{\ast}$ is exactly the midpoint of the means.
-
-### 📝 Solved Numerical 8.1 — Minimum Risk Decision
-
-A patient's test gives posteriors $P(\omega_1\mid x) = 0.3$ (disease), $P(\omega_2\mid x) = 0.7$ (healthy). Loss matrix:
-
-|  | True: Disease ($\omega_1$) | True: Healthy ($\omega_2$) |
-|---|---|---|
-| $\alpha_1$: Declare disease | $\lambda_{11} = 0$ | $\lambda_{12} = 1$ |
-| $\alpha_2$: Declare healthy | $\lambda_{21} = 10$ | $\lambda_{22} = 0$ |
-
-(Missing a disease is 10 times worse than a false alarm.)
+Example: $\mu_1 = 2$, $\mu_2 = 6$, $\sigma^2 = 1$, priors 0.8 and 0.2:
 
 ```math
-R(\alpha_1\mid x) = 0(0.3) + 1(0.7) = 0.7
+x^{\ast} = 4 + \frac{1}{-4}\ln(0.25) = 4 + 0.347 = 4.347
 ```
 
-```math
-R(\alpha_2\mid x) = 10(0.3) + 0(0.7) = 3.0
-```
+With equal priors the boundary is exactly halfway between the means.
 
-$R(\alpha_1) < R(\alpha_2)$ → **declare disease**, even though the posterior for disease is only 0.3! Under 0–1 loss, MAP would have said "healthy". The asymmetric cost changes the decision.
-
-**Threshold:** decide disease if $P(\omega_1\mid x)/P(\omega_2\mid x) > (\lambda_{12}-\lambda_{22})/(\lambda_{21}-\lambda_{11}) = 1/10$, i.e., whenever $P(\omega_1\mid x) > 1/11 = 0.0909$.
-
-### 📝 Solved Numerical 8.2 — Gaussian Decision Boundary
-
-Two classes, 1-D Gaussians: $\mu_1 = 2$, $\mu_2 = 6$, common $\sigma^2 = 1$, priors $P(\omega_1) = 0.8$, $P(\omega_2) = 0.2$.
-
-```math
-x^{\ast} = \frac{2+6}{2} + \frac{1}{2-6}\ln\frac{0.2}{0.8} = 4 + \frac{-1.3863}{-4} = 4 + 0.3466 = 4.347
-```
-
-Decide $\omega_1$ if $x < 4.347$. The boundary shifted from 4 toward $\mu_2$ because $\omega_1$ is more likely a-priori.
-
-💡 **Exam tip:** In Bayesian decision theory questions, always write the conditional-risk formula first, then substitute. Remember that 0–1 loss reduces to MAP.
+</details>
 
 ---
 
-## 9. Formula Sheet
+## ✅ Quick Revision
 
 | Concept | Formula |
 |---|---|
-| Hyperplane | $\mathbf{w}^T\mathbf{x} + b = 0$ |
-| Distance to hyperplane | $r = (\mathbf{w}^T\mathbf{x}+b)/\lVert\mathbf{w}\rVert$ |
+| Accuracy / Precision / Recall | $\frac{TP+TN}{\text{Total}}$ / $\frac{TP}{TP+FP}$ / $\frac{TP}{TP+FN}$ |
+| F1 score | $\frac{2PR}{P+R}$ |
+| Linear boundary | $\mathbf{w}^T\mathbf{x} + b = 0$ |
+| Distance from line | $\frac{\mathbf{w}^T\mathbf{x}+b}{\lVert\mathbf{w}\rVert}$ |
 | SVM margin | $2/\lVert\mathbf{w}\rVert$ |
-| Perceptron update | $\mathbf{w} \leftarrow \mathbf{w} + \eta(y-\hat{y})\mathbf{x}$ |
-| Perceptron mistake bound | $(R/\gamma)^2$ |
-| Sigmoid | $\sigma(z) = 1/(1+e^{-z})$, $\sigma' = \sigma(1-\sigma)$ |
-| Log loss | $-\frac{1}{m}\sum[y\ln\hat{p} + (1-y)\ln(1-\hat{p})]$ |
-| Logistic gradient | $\frac{1}{m}\sum(\hat{p}_i - y_i)\mathbf{x}_i$ |
-| Softmax | $e^{z_k}/\sum_j e^{z_j}$ |
-| OvA / OvO classifiers | $K$ / $K(K-1)/2$ |
-| Bayes theorem | $P(C\mid\mathbf{x}) = P(\mathbf{x}\mid C)P(C)/P(\mathbf{x})$ |
-| Total probability | $P(\mathbf{x}) = \sum_j P(\mathbf{x}\mid C_j)P(C_j)$ |
-| Naïve Bayes | $\arg\max_k P(C_k)\prod_j P(x_j\mid C_k)$ |
-| Laplace smoothing | $(\text{count}+1)/(N_k + V)$ |
+| Perceptron update | $w \leftarrow w + \eta(y - \hat{y})x$ |
+| Sigmoid | $\sigma(z) = \frac{1}{1+e^{-z}}$ |
+| Logistic loss | $-[y\ln\hat{p} + (1-y)\ln(1-\hat{p})]$ |
+| Logistic update | $w \leftarrow w - \eta(\hat{p} - y)x$ |
+| OvA / OvO | $K$ / $\frac{K(K-1)}{2}$ classifiers |
+| Softmax | $\frac{e^{z_k}}{\sum_j e^{z_j}}$ |
+| Bayes theorem | $P(C\mid x) = \frac{P(x\mid C)P(C)}{P(x)}$ |
+| Naïve Bayes | $\arg\max_C P(C)\prod_j P(x_j\mid C)$ |
+| Laplace smoothing | $\frac{\text{count}+1}{N_C + V}$ |
 | Gaussian likelihood | $\frac{1}{\sqrt{2\pi\sigma^2}}e^{-(x-\mu)^2/2\sigma^2}$ |
-| Conditional risk | $R(\alpha_i\mid\mathbf{x}) = \sum_j\lambda_{ij}P(\omega_j\mid\mathbf{x})$ |
-| Likelihood ratio test | $\frac{p(\mathbf{x}\mid\omega_1)}{p(\mathbf{x}\mid\omega_2)} > \frac{\lambda_{12}-\lambda_{22}}{\lambda_{21}-\lambda_{11}}\cdot\frac{P(\omega_2)}{P(\omega_1)}$ |
-| 1-D Gaussian boundary | $x^{\ast} = \frac{\mu_1+\mu_2}{2} + \frac{\sigma^2}{\mu_1-\mu_2}\ln\frac{P(\omega_2)}{P(\omega_1)}$ |
-| Precision / Recall | $TP/(TP+FP)$ / $TP/(TP+FN)$ |
-| F1 score | $2PR/(P+R)$ |
+| Conditional risk | $R(\alpha_i\mid x) = \sum_j\lambda_{ij}P(\omega_j\mid x)$ |
+
+**Likely exam questions:** Naïve Bayes on Play Tennis · Perceptron for AND/OR · Medical-test Bayes problem · OvA vs OvO · Minimum-risk decision.
 
 ---
 
